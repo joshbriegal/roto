@@ -7,4 +7,6 @@ class GACF(PeriodFinder):
     Args:
         PeriodFinder ([type]): [description]
     """
-    pass
+    
+    def randomfunction(inputs):
+        pass
