@@ -1,3 +1,4 @@
 astropy==4.2
 gacf==1.0.0
-numpy
+numpy==1.21.0
+peakutils==1.3.3

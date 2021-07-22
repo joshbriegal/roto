@@ -1,9 +1,10 @@
+from typing import Optional
+from typing import Tuple
+
 import numpy as np
-
 from astropy.timeseries import LombScargle
-from typing import Optional, Tuple
 
-from src.methods.abstractperiodfinder import PeriodFinder
+from src.methods.periodfinder import PeriodFinder, Periodogram
 
 
 class LombScarglePeriodFinder(PeriodFinder):
@@ -16,10 +17,10 @@ class LombScarglePeriodFinder(PeriodFinder):
         timeseries: np.ndarray,
         flux: np.ndarray,
         flux_errors: Optional[np.ndarray] = None,
-        fit_mean: Optional[bool] = None,
-        center_data: Optional[bool] = None,
-        nterms: Optional[bool] = None,
-        normalization: Optional[bool] = None,
+        fit_mean: Optional[bool] = True,
+        center_data: Optional[bool] = True,
+        nterms: Optional[bool] = 1,
+        normalization: Optional[bool] = "standard",
     ):
         """
         Args:
@@ -43,16 +44,7 @@ class LombScarglePeriodFinder(PeriodFinder):
             normalization=normalization,
         )
 
-    def __call__(
-        self,
-        method="auto",
-        method_kwds=None,
-        normalization=None,
-        samples_per_peak=5,
-        nyquist_factor=5,
-        minimum_frequency=None,
-        maximum_frequency=None,
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    def calculate_periodogram(self, **kwargs) -> Periodogram:
         """[summary]
 
         Args:
@@ -67,12 +59,23 @@ class LombScarglePeriodFinder(PeriodFinder):
         Returns:
             Tuple[np.ndarray, np.ndarray]: The frequency and Lomb-Scargle power
         """
-        return self._lombscargle.autopower(
-            method=method,
-            method_kwds=method_kwds,
-            normalization=normalization,
-            samples_per_peak=samples_per_peak,
-            nyquist_factor=nyquist_factor,
-            minimum_frequency=minimum_frequency,
-            maximum_frequency=maximum_frequency,
+
+        method = kwargs.get("method", "auto")
+        method_kwds = kwargs.get("method_kwds", None)
+        normalization = kwargs.get("normalization", None)
+        samples_per_peak = kwargs.get("samples_per_peak", 5)
+        nyquist_factor = kwargs.get("nyquist_factor", 5)
+        minimum_frequency = kwargs.get("minimum_frequency", None)
+        maximum_frequency = kwargs.get("maximum_frequency", None)
+
+        return Periodogram(
+            *self._lombscargle.autopower(
+                method=method,
+                method_kwds=method_kwds,
+                normalization=normalization,
+                samples_per_peak=samples_per_peak,
+                nyquist_factor=nyquist_factor,
+                minimum_frequency=minimum_frequency,
+                maximum_frequency=maximum_frequency,
+            )
         )

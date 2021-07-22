@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 
 from astropy.timeseries import LombScargle
 from numpy.testing import assert_equal
@@ -8,22 +7,7 @@ from unittest import mock
 from src.methods.lombscargle import LombScarglePeriodFinder
 
 
-@pytest.fixture
-def timeseries():
-    return np.linspace(0, 1, 1000)
-
-
-@pytest.fixture
-def flux(timeseries):
-    return np.sin(timeseries)
-
-
-@pytest.fixture
-def flux_errors(timeseries):
-    return np.random.rand(*timeseries.shape)
-
-
-def testLSPeriodFinderInit(timeseries, flux, flux_errors):
+def test_init(timeseries, flux, flux_errors):
 
     pf = LombScarglePeriodFinder(timeseries, flux, flux_errors)
 
@@ -34,10 +18,10 @@ def testLSPeriodFinderInit(timeseries, flux, flux_errors):
 
 
 @mock.patch.object(LombScargle, "autopower", autospec=True)
-def testLSPeriodFinderFind(mock_autopower, timeseries, flux, flux_errors):
+def test_periodogram(mock_autopower, timeseries, flux, flux_errors):
     mock_autopower.return_value = (np.zeros(10), np.ones(10))
 
-    pf = LombScarglePeriodFinder(timeseries, flux, flux_errors)
+    ls = LombScarglePeriodFinder(timeseries, flux, flux_errors)
 
     maximum_frequency = 2352
     method = "somemethod"
@@ -47,7 +31,7 @@ def testLSPeriodFinderFind(mock_autopower, timeseries, flux, flux_errors):
     nyquist_factor = 69
     samples_per_peak = 420
 
-    freq, power = pf(
+    periodogram = ls.calculate_periodogram(
         maximum_frequency=maximum_frequency,
         method=method,
         method_kwds=method_kwds,
@@ -55,10 +39,11 @@ def testLSPeriodFinderFind(mock_autopower, timeseries, flux, flux_errors):
         normalization=normalization,
         nyquist_factor=nyquist_factor,
         samples_per_peak=samples_per_peak,
+        this_is_not="a real argument"
     )
 
     mock_autopower.assert_called_once_with(
-        pf._lombscargle,
+        ls._lombscargle,
         maximum_frequency=maximum_frequency,
         method=method,
         method_kwds=method_kwds,
@@ -68,5 +53,16 @@ def testLSPeriodFinderFind(mock_autopower, timeseries, flux, flux_errors):
         samples_per_peak=samples_per_peak
         )
 
-    assert_equal(freq, mock_autopower.return_value[0])
-    assert_equal(power, mock_autopower.return_value[1])
+    assert_equal(periodogram.frequency_axis, mock_autopower.return_value[0])
+    assert_equal(periodogram.power_axis, mock_autopower.return_value[1])
+
+def test_call(timeseries, flux, period):
+
+    ls = LombScarglePeriodFinder(timeseries, flux, flux_errors=None)
+
+    outputted_period = ls()
+
+    # assert outputted_period.period == period  # TODO: Currently fails as LS outputs many aliases - we see sampling as largest peak.
+    assert outputted_period.method == "LombScarglePeriodFinder"
+    assert outputted_period.neg_error == 0
+    assert outputted_period.pos_error == 0

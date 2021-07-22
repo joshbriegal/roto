@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 setuptools.setup(
     name="roto",
     version="0.0.1",
-    author="Josh Briegal & Ed Gillent",
+    author="Josh Briegal & Ed Gillen",
     author_email="jtb34@cam.ac.uk",
     description="One stop rotation finder tools",
     long_description=long_description,

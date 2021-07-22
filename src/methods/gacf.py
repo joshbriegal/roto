@@ -1,4 +1,4 @@
-from src.methods.abstractperiodfinder import PeriodFinder
+from src.methods.periodfinder import PeriodFinder
 
 class GACFPeriodFinder(PeriodFinder):
     """G-ACF method to find periods.
