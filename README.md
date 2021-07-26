@@ -18,7 +18,7 @@ roto = RoTo(timeseries, flux, flux_errors, **config_kwargs)  # instantiate objec
 
 roto()  # call to find periods
 
-roto.lombscargle_  # underlying ls object
+print(roto)  # will print an ascii table of the outputted periods
 
 ```
 

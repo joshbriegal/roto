@@ -1,10 +1,12 @@
-from abstractperiodfinder import PeriodFinder
+from src.methods.periodfinder import PeriodFinder
 
-class GACF(PeriodFinder):
+class GACFPeriodFinder(PeriodFinder):
     """G-ACF method to find periods.
     Conforms to PeriodFinder interface.
 
     Args:
         PeriodFinder ([type]): [description]
     """
-    pass
+    
+    def randomfunction(inputs):
+        pass
