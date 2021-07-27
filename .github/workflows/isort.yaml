@@ -18,7 +18,6 @@ jobs:
         run: isort . --check-only
       - name: If needed, commit isort changes to the pull request
         if: failure()
-        uses: actions/checkout@v2
         run: |
           isort .
           git config --local user.email "action@github.com"

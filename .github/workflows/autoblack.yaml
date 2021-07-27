@@ -20,7 +20,6 @@ jobs:
         run: black --check .
       - name: If needed, commit black changes to the pull request
         if: failure()
-        uses: actions/checkout@v2
         run: |
           black .
           git config --local user.email "action@github.com"
