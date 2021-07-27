@@ -8,12 +8,16 @@ from typing import Optional, List
 from src.methods.periodfinder import PeriodFinder, PeriodResult
 from src.methods.lombscargle import LombScarglePeriodFinder
 from src.methods.fft import FFTPeriodFinder
+from src.methods.gacf import GACFPeriodFinder
 
 
 class RoTo:
 
-    METHODS = {"lombscargle": LombScarglePeriodFinder,
-    "fft": FFTPeriodFinder}
+    METHODS = {
+        "lombscargle": LombScarglePeriodFinder,
+        "fft": FFTPeriodFinder,
+        "gacf": GACFPeriodFinder,
+    }
 
     def __init__(
         self,
