@@ -1,3 +1,4 @@
+[![Python tests](https://github.com/joshbriegal/roto/actions/workflows/pythontests.yaml/badge.svg?branch=main)](https://github.com/joshbriegal/roto/actions/workflows/pythontests.yaml)
 # Rotation Toolkit (RoTo)
 
 Hello RoTo

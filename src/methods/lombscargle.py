@@ -24,9 +24,9 @@ class LombScarglePeriodFinder(PeriodFinder):
     ):
         """
         Args:
-            timeseries (np.ndarray): [description]
-            flux (np.ndarray): [description]
-            flux_errors (Optional[np.ndarray], optional): [description]. Defaults to None.
+            timeseries (np.ndarray): array like time series.
+            flux (np.ndarray): array like flux values
+            flux_errors (Optional[np.ndarray], optional): array like errors on flux values. Defaults to None.
             fit_mean (Optional[bool], optional): [description]. Defaults to None.
             center_data (Optional[bool], optional): [description]. Defaults to None.
             nterms (Optional[bool], optional): [description]. Defaults to None.
@@ -45,7 +45,7 @@ class LombScarglePeriodFinder(PeriodFinder):
         )
 
     def calculate_periodogram(self, **kwargs) -> Periodogram:
-        """[summary]
+        """ Calculate LS Periodogram of data
 
         Args:
             method (str, optional): [description]. Defaults to "auto".
