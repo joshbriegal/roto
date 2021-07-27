@@ -45,7 +45,7 @@ class LombScarglePeriodFinder(PeriodFinder):
         )
 
     def calculate_periodogram(self, **kwargs) -> Periodogram:
-        """ Calculate LS Periodogram of data
+        """Calculate LS Periodogram of data
 
         Args:
             method (str, optional): [description]. Defaults to "auto".

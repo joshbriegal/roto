@@ -22,14 +22,14 @@ class Periodogram:
     normalize: bool = True
 
     def __post_init__(self):
-        """ Normalises the power axis of the periodogram
-        """
+        """Normalises the power axis of the periodogram"""
         if self.normalize:
             self.power_axis = np.divide(self.power_axis, self.power_axis.max())
-    
+
+
 @dataclass
 class PeriodResult:
-    """ Period Result Dataclass.
+    """Period Result Dataclass.
 
     Args:
         period: period value
@@ -37,6 +37,7 @@ class PeriodResult:
         pos_error: error above period value
         method: name of method used to calculate period (e.g. LombScarglePeriodFinder)
     """
+
     period: float
     neg_error: float = 0
     pos_error: float = 0
@@ -47,7 +48,7 @@ class PeriodResult:
 
 
 class PeriodFinder(ABC):
-    """ Abstract PeriodFinder Class Interface """
+    """Abstract PeriodFinder Class Interface"""
 
     def __init__(
         self,
@@ -66,7 +67,7 @@ class PeriodFinder(ABC):
         self.samples_per_peak = samples_per_peak
 
     def __call__(self, **kwargs) -> PeriodResult:
-        """ Call the PeriodFinder object to return a PeriodResult object.
+        """Call the PeriodFinder object to return a PeriodResult object.
 
         Returns:
             PeriodResult: PeriodResult contains period, error and method information.
@@ -75,15 +76,16 @@ class PeriodFinder(ABC):
         peak_indices = self.calculate_peak_indexes(periodogram.power_axis)
         if peak_indices.size > 0:
             peak_frequencies = periodogram.frequency_axis[peak_indices]
-            period = 1.0 / peak_frequencies[0]  # just output largest peak in periodogram for now.
+            period = (
+                1.0 / peak_frequencies[0]
+            )  # just output largest peak in periodogram for now.
             return PeriodResult(period=period, method=self.__class__.__name__)
-        
+
         return None
-        
 
     @abstractmethod
     def calculate_periodogram(self, **kwargs) -> Periodogram:
-        """ Abstract method for calculating periodogram of data.
+        """Abstract method for calculating periodogram of data.
 
         Returns:
             Periodogram
@@ -91,7 +93,7 @@ class PeriodFinder(ABC):
         raise NotImplementedError
 
     def calculate_peak_indexes(self, data: np.ndarray) -> np.ndarray:
-        """ Calculate the indexes of peaks within a data array.
+        """Calculate the indexes of peaks within a data array.
 
         Args:
             data (np.ndarray): input data values
@@ -108,5 +110,5 @@ class PeriodFinder(ABC):
         if peak_indices.size > 0:
             sort_indexes = data[peak_indices].argsort()
             return peak_indices[sort_indexes[::-1]]
-        
+
         return np.array([])

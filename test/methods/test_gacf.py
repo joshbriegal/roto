@@ -39,14 +39,14 @@ def test_autocorrelation(mock_gacf, timeseries, flux, flux_errors):
     alpha = None
 
     lag_timeseries, correlations = pf.calculate_autocorrelation(
-            min_lag=min_lag,
-            max_lag=max_lag,
-            lag_resolution=lag_resolution,
-            selection_function=selection_function,
-            weight_function=weight_function,
-            alpha=alpha,
-            this_is="not a real argument"
-        )
+        min_lag=min_lag,
+        max_lag=max_lag,
+        lag_resolution=lag_resolution,
+        selection_function=selection_function,
+        weight_function=weight_function,
+        alpha=alpha,
+        this_is="not a real argument",
+    )
 
     mock_gacf.assert_called_once_with(
         pf._gacf,
@@ -56,10 +56,11 @@ def test_autocorrelation(mock_gacf, timeseries, flux, flux_errors):
         selection_function=selection_function,
         weight_function=weight_function,
         alpha=alpha,
-        )
+    )
 
     assert_equal(lag_timeseries, mock_gacf.return_value[0])
     assert_equal(correlations, mock_gacf.return_value[1])
+
 
 @mock.patch("src.methods.gacf.FFTPeriodFinder", autospec=True)
 def test_call(mock_fft, timeseries, flux, period):
