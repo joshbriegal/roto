@@ -1,13 +1,16 @@
 from typing import Optional
-from typing import Tuple
 
 import numpy as np
 import numpy.fft as fft
 
-from src.methods.periodfinder import PeriodFinder, Periodogram
+from src.methods.periodfinder import PeriodFinder
+from src.methods.periodfinder import Periodogram
 
 
 class FFTPeriodFinder(PeriodFinder):
+    """Fast Fourier Transform (FFT) method to find periods.
+    Conforms to PeriodFinder interface.
+    """
 
     def __init__(
         self,
@@ -15,12 +18,25 @@ class FFTPeriodFinder(PeriodFinder):
         flux: np.ndarray,
         flux_errors: Optional[np.ndarray] = None,
     ):
+        """
+        Args:
+            timeseries (np.ndarray): array like time series.
+            flux (np.ndarray): array like flux values
+            flux_errors (Optional[np.ndarray], optional): array like errors on flux values. Defaults to None.
+        """
         super().__init__(timeseries, flux, flux_errors)
 
     def calculate_periodogram(self, **kwargs) -> Periodogram:
-        """
-        Caluclate FFT of LCObject Data
-        :return: tuple
+        """Calculates FFT Periodogram of data
+
+        Args:
+            n_times_data (int, default 32): how many times to pad data for additional precision.
+            len_ft (int): input length of fourier series (if longer than data will provide additional precision).
+            power_of_two (bool, default True): if True, will extend input data series to power of two length for additional speed up.
+            pad_both_sides (bool, default True): if True, will add padding to start and end of data as opposed to just the end.
+
+        Returns:
+            Periodogram: frequency/power periodogram.
         """
 
         n_times_data = kwargs.get("n_times_data", 32)

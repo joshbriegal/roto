@@ -7,11 +7,13 @@ from typing import Optional, List
 
 from src.methods.periodfinder import PeriodFinder, PeriodResult
 from src.methods.lombscargle import LombScarglePeriodFinder
+from src.methods.fft import FFTPeriodFinder
 
 
 class RoTo:
 
-    METHODS = {"lombscargle": LombScarglePeriodFinder}
+    METHODS = {"lombscargle": LombScarglePeriodFinder,
+    "fft": FFTPeriodFinder}
 
     def __init__(
         self,

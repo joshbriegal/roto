@@ -7,7 +7,7 @@ if __name__ == "__main__":
     # import data
     df = pd.read_csv(
         "example/KIC_5110407_LC_with_gaps.dat",
-        sep="\s+",
+        sep=r"\s+",
         header=None,
         engine="python",
         thousands=",",
