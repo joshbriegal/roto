@@ -18,11 +18,11 @@ jobs:
         run: isort . --check-only
       - name: If needed, commit isort changes to the pull request
         if: failure()
+        uses: actions/checkout@v2
         run: |
           isort .
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/$GITHUB_REPOSITORY
-          git add -A
+          git add .
           git commit -m 'fixup: Format Python code with isort'
           git push
