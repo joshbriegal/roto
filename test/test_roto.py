@@ -5,11 +5,17 @@ import pytest
 
 inverse_methods_dictionary = {method: name for name, method in RoTo.METHODS.items()}
 
+
 @pytest.mark.parametrize(
     "method_parameters",
-    [None, {"lombscargle": {"normalization": True, "fit_mean": False}}],
+    [
+        None,
+        {"lombscargle": {"normalization": True, "fit_mean": False}},
+        {"gacf": {}},
+        {"fft": {}},
+    ],
 )
-def test_create_roto( method_parameters, timeseries, flux, flux_errors):
+def test_create_roto(method_parameters, timeseries, flux, flux_errors):
     roto = RoTo(timeseries, flux, flux_errors, method_parameters)
 
     for method in roto.methods:
