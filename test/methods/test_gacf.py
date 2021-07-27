@@ -1,12 +1,12 @@
-from src.methods.periodfinder import PeriodResult
-import numpy as np
-
-from gacf import GACF
-from numpy.testing import assert_equal
 from unittest import mock
 
-from src.methods.gacf import GACFPeriodFinder
+import numpy as np
+from gacf import GACF
+from numpy.testing import assert_equal
+
 from src.methods.fft import FFTPeriodFinder
+from src.methods.gacf import GACFPeriodFinder
+from src.methods.periodfinder import PeriodResult
 
 
 def test_init(timeseries, flux, flux_errors):

@@ -1,13 +1,10 @@
-from gacf import GACF
 from typing import Optional
 
-
 import numpy as np
+from gacf import GACF
 
-
-from src.methods.periodfinder import PeriodFinder, PeriodResult
-from src.methods.periodfinder import Periodogram
 from src.methods.fft import FFTPeriodFinder
+from src.methods.periodfinder import PeriodFinder, Periodogram, PeriodResult
 
 
 class GACFPeriodFinder(PeriodFinder):

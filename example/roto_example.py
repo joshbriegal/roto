@@ -1,6 +1,6 @@
-from roto import RoTo
-
 import pandas as pd
+
+from roto import RoTo
 
 if __name__ == "__main__":
 

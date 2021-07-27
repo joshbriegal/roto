@@ -1,8 +1,8 @@
-import numpy as np
-
 from abc import ABC, abstractmethod
-from typing import Optional
 from dataclasses import dataclass
+from typing import Optional
+
+import numpy as np
 from peakutils import indexes
 
 

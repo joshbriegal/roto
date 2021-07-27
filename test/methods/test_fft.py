@@ -1,10 +1,10 @@
-from src.methods.periodfinder import PeriodFinder
-import numpy as np
-
-from numpy.testing import assert_equal, assert_almost_equal
 from unittest import mock
 
+import numpy as np
+from numpy.testing import assert_almost_equal, assert_equal
+
 from src.methods.fft import FFTPeriodFinder
+from src.methods.periodfinder import PeriodFinder
 
 
 def test_init(timeseries, flux, flux_errors):

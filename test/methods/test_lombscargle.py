@@ -1,8 +1,8 @@
-import numpy as np
+from unittest import mock
 
+import numpy as np
 from astropy.timeseries import LombScargle
 from numpy.testing import assert_equal
-from unittest import mock
 
 from src.methods.lombscargle import LombScarglePeriodFinder
 
