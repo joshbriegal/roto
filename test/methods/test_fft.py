@@ -42,9 +42,7 @@ def test_periodogram(mock_rfftfreq, mock_rfft, timeseries, flux, flux_errors):
     assert_equal(mock_rfft.call_args[0][0], flux)
     assert mock_rfft.call_args[1]["n"] == len_ft
 
-    mock_rfftfreq.assert_called_once_with(
-        len_ft, timeseries[1] - timeseries[0]
-    )
+    mock_rfftfreq.assert_called_once_with(len_ft, timeseries[1] - timeseries[0])
 
     assert_equal(periodogram.frequency_axis, mock_rfftfreq.return_value)
     assert_equal(periodogram.power_axis, mock_rfft.return_value)
@@ -56,7 +54,9 @@ def test_call(timeseries, flux, period):
 
     outputted_period = fft()
 
-    assert_almost_equal(outputted_period.period, period, decimal=1)  # TODO: Currently fails as LS outputs many aliases - we see sampling as largest peak.
+    assert_almost_equal(
+        outputted_period.period, period, decimal=1
+    )  # TODO: Currently fails as LS outputs many aliases - we see sampling as largest peak.
     assert outputted_period.method == "FFTPeriodFinder"
     assert outputted_period.neg_error == 0
     assert outputted_period.pos_error == 0

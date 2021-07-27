@@ -1,13 +1,16 @@
 import pytest
 import numpy as np
 
+
 @pytest.fixture
 def timeseries():
     return np.linspace(0, 100, 1000)
 
+
 @pytest.fixture
 def period():
     return 20.0
+
 
 @pytest.fixture
 def flux(timeseries, period):

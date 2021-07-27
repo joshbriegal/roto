@@ -39,7 +39,7 @@ def test_periodogram(mock_autopower, timeseries, flux, flux_errors):
         normalization=normalization,
         nyquist_factor=nyquist_factor,
         samples_per_peak=samples_per_peak,
-        this_is_not="a real argument"
+        this_is_not="a real argument",
     )
 
     mock_autopower.assert_called_once_with(
@@ -50,11 +50,12 @@ def test_periodogram(mock_autopower, timeseries, flux, flux_errors):
         minimum_frequency=minimum_frequency,
         normalization=normalization,
         nyquist_factor=nyquist_factor,
-        samples_per_peak=samples_per_peak
-        )
+        samples_per_peak=samples_per_peak,
+    )
 
     assert_equal(periodogram.frequency_axis, mock_autopower.return_value[0])
     assert_equal(periodogram.power_axis, mock_autopower.return_value[1])
+
 
 def test_call(timeseries, flux, period):
 
