@@ -1,0 +1,29 @@
+name: Sort imports with isort
+
+on: [pull_request]
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+      - name: Install isort
+        run: pip install isort
+      - name: Run isort --check-only
+        run: isort . --check-only
+      - name: If needed, commit isort changes to the pull request
+        if: failure()
+        run: |
+          isort .
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .
+          git commit -m 'fixup: Format Python code with isort'
+          git push

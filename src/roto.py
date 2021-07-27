@@ -1,14 +1,13 @@
 import inspect
+from typing import List, Optional
+
 import numpy as np
 import pandas as pd
 
-
-from typing import Optional, List
-
-from src.methods.periodfinder import PeriodFinder, PeriodResult
-from src.methods.lombscargle import LombScarglePeriodFinder
 from src.methods.fft import FFTPeriodFinder
 from src.methods.gacf import GACFPeriodFinder
+from src.methods.lombscargle import LombScarglePeriodFinder
+from src.methods.periodfinder import PeriodFinder, PeriodResult
 
 
 class RoTo:

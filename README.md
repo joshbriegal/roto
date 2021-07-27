@@ -1,4 +1,7 @@
 [![Python tests](https://github.com/joshbriegal/roto/actions/workflows/pythontests.yaml/badge.svg?branch=main)](https://github.com/joshbriegal/roto/actions/workflows/pythontests.yaml)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Imports: isort](https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelColor=ef8336)](https://pycqa.github.io/isort/)
+
 # Rotation Toolkit (RoTo)
 
 Hello RoTo

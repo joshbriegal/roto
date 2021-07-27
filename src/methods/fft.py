@@ -3,8 +3,7 @@ from typing import Optional
 import numpy as np
 import numpy.fft as fft
 
-from src.methods.periodfinder import PeriodFinder
-from src.methods.periodfinder import Periodogram
+from src.methods.periodfinder import PeriodFinder, Periodogram
 
 
 class FFTPeriodFinder(PeriodFinder):

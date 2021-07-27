@@ -1,7 +1,7 @@
-from src.roto import RoTo
-from src.methods.periodfinder import PeriodFinder
 import pytest
 
+from src.methods.periodfinder import PeriodFinder
+from src.roto import RoTo
 
 inverse_methods_dictionary = {method: name for name, method in RoTo.METHODS.items()}
 
