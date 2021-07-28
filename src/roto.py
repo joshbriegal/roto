@@ -2,11 +2,13 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
+from scipy.stats import median_abs_deviation
 
 from src.methods.fft import FFTPeriodFinder
 from src.methods.gacf import GACFPeriodFinder
 from src.methods.gaussianprocess import GPPeriodFinder
 from src.methods.lombscargle import LombScarglePeriodFinder
+from src.methods.periodfinder import PeriodResult
 
 
 class RoTo:
@@ -84,3 +86,35 @@ class RoTo:
 
     def __str__(self):
         return self.periods_to_table().to_string(index=False)
+
+    def best_period(self, method: str = "mean") -> PeriodResult:
+        if not self.periods:
+            return None
+
+        if method == "mean":
+            mean = np.mean([p.period for p in self.periods])
+            std = np.std([p.period for p in self.periods]) / np.sqrt(len(self.periods))
+            return PeriodResult(
+                period=mean, neg_error=std, pos_error=std, method="CombinedPeriodResult"
+            )
+        elif method == "median":
+            median = np.median([p.period for p in self.periods])
+            std = (
+                1.4826
+                * median_abs_deviation([p.period for p in self.periods])
+                / np.sqrt(len(self.periods))
+            )
+            return PeriodResult(
+                period=median,
+                neg_error=std,
+                pos_error=std,
+                method="CombinedPeriodResult",
+            )
+        elif method in self.METHODS:
+            for periodresult in self.periods:
+                if periodresult.method == self.METHODS[method].__name__:
+                    return periodresult
+        else:
+            raise ValueError(
+                f"Parameter 'method' must be one of ['mean', 'median'] or {list(self.METHODS.keys())}]"
+            )

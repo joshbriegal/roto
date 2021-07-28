@@ -46,6 +46,41 @@ class PeriodResult:
     def __repr__(self):
         return f"[{self.period:.4f}+{self.pos_error:.4f}-{self.neg_error:.4f} ({self.method})]"
 
+    def __add__(self, other: "PeriodResult"):
+        """Add together two PeriodResult objects.
+        Will add upper and lower errors in quadrature.
+        """
+        return PeriodResult(
+            period=(self.period + other.period),
+            neg_error=np.sqrt(self.neg_error ** 2 + other.neg_error ** 2),
+            pos_error=np.sqrt(self.pos_error ** 2 + other.pos_error ** 2),
+            method="CombinedPeriodResult",
+        )
+
+    def __sub__(self, other: "PeriodResult"):
+        """Subtract two PeriodResult objects and find absolute difference.
+        Will add upper and lower errors in quadrature.
+        """
+        return PeriodResult(
+            period=np.abs(self.period - other.period),
+            neg_error=np.sqrt(self.neg_error ** 2 + other.neg_error ** 2),
+            pos_error=np.sqrt(self.pos_error ** 2 + other.pos_error ** 2),
+            method="CombinedPeriodResult",
+        )
+
+    def __truediv__(self, other: float):
+        relative_neg_error = self.neg_error / self.period
+        relative_pos_error = self.pos_error / self.period
+
+        new_period = self.period / other
+
+        return PeriodResult(
+            period=new_period,
+            neg_error=(relative_neg_error * new_period),
+            pos_error=(relative_pos_error * new_period),
+            method="CombinedPeriodResult",
+        )
+
 
 class PeriodFinder(ABC):
     """Abstract PeriodFinder Class Interface"""
