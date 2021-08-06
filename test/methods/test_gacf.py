@@ -80,3 +80,85 @@ def test_call(mock_fft, timeseries, flux, period):
     assert outputted_period.method == "GACFPeriodFinder"
     assert outputted_period.neg_error == 0
     assert outputted_period.pos_error == 0
+
+
+@mock.patch("src.methods.gacf.median_abs_deviation", autospec=True)
+@mock.patch("src.methods.gacf.np.median", autospec=True)
+def test_find_acf_peaks_sine(mock_median, mock_mad):
+
+    period = 1.23
+
+    mock_mad.return_value = 0.1
+    mock_median.return_value = period
+
+    timeseries = np.linspace(0, 10, 100)
+    flux = np.sin(np.pi * timeseries * 2 / period)
+
+    pf = GACFPeriodFinder(timeseries, flux)
+    lag_timeseries, correlations = pf.calculate_autocorrelation(min_lag=0)
+
+    outputted_period = pf.find_acf_peaks(lag_timeseries, correlations)
+
+    valid_peaks = mock_mad.call_args[0][0]
+
+    assert mock_mad.call_count == 1
+    assert mock_median.call_count == 1
+
+    assert outputted_period.period == period
+    assert outputted_period.method == "GACFPeriodFinder"
+    assert outputted_period.neg_error == outputted_period.pos_error
+    assert outputted_period.pos_error == 0.1 * 1.483 / np.sqrt(len(valid_peaks) - 1)
+
+
+@mock.patch("src.methods.gacf.median_abs_deviation", autospec=True)
+@mock.patch("src.methods.gacf.np.median", autospec=True)
+def test_find_acf_peaks_sin_short_period(mock_median, mock_mad):
+
+    period = 0.04
+
+    mock_mad.return_value = 0.1
+    mock_median.return_value = period
+
+    timeseries = np.linspace(0, 10, 100)
+    flux = np.sin(np.pi * timeseries * 2 / period)
+
+    pf = GACFPeriodFinder(timeseries, flux)
+    lag_timeseries, correlations = pf.calculate_autocorrelation(min_lag=0)
+
+    outputted_period = pf.find_acf_peaks(lag_timeseries, correlations)
+
+    valid_peaks = mock_mad.call_args[0][0]
+
+    assert len(valid_peaks) == 10
+
+    assert mock_mad.call_count == 1
+    assert mock_median.call_count == 1
+
+    assert outputted_period.period == period
+    assert outputted_period.method == "GACFPeriodFinder"
+    assert outputted_period.neg_error == outputted_period.pos_error
+    assert outputted_period.pos_error == 0.1 * 1.483 / np.sqrt(len(valid_peaks) - 1)
+
+
+@mock.patch("src.methods.gacf.median_abs_deviation", autospec=True)
+@mock.patch("src.methods.gacf.np.median", autospec=True)
+def test_find_acf_peaks_sine_long_period(mock_median, mock_mad):
+
+    period = 7.5
+
+    timeseries = np.linspace(0, 10, 100)
+    flux = np.sin(np.pi * timeseries * 2 / period)
+
+    pf = GACFPeriodFinder(timeseries, flux)
+    lag_timeseries, correlations = pf.calculate_autocorrelation(min_lag=0)
+
+    outputted_period = pf.find_acf_peaks(lag_timeseries, correlations)
+
+    mock_mad.assert_not_called()
+    mock_median.assert_not_called()
+
+    # values not exact, but check it roughly works.
+    assert period * 0.8 <= outputted_period.period <= period * 1.2
+    assert outputted_period.method == "GACFPeriodFinder"
+    assert outputted_period.neg_error == outputted_period.pos_error
+    assert 2.4 <= outputted_period.pos_error <= 2.5

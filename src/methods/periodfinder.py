@@ -92,11 +92,12 @@ class PeriodFinder(ABC):
         """
         raise NotImplementedError
 
-    def calculate_peak_indexes(self, data: np.ndarray) -> np.ndarray:
+    def calculate_peak_indexes(self, data: np.ndarray, sort=True) -> np.ndarray:
         """Calculate the indexes of peaks within a data array.
 
         Args:
             data (np.ndarray): input data values
+            sort (bool, default True): if True, return peaks sorted by height
 
         Returns:
             np.ndarray: indexes within data, sorted largest to smallest
@@ -108,7 +109,10 @@ class PeriodFinder(ABC):
         )
 
         if peak_indices.size > 0:
-            sort_indexes = data[peak_indices].argsort()
-            return peak_indices[sort_indexes[::-1]]
+            if sort:
+                sort_indexes = data[peak_indices].argsort()
+                return peak_indices[sort_indexes[::-1]]
+
+            return peak_indices
 
         return np.array([])
