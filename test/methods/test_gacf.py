@@ -109,6 +109,7 @@ def test_find_acf_peaks_sine(mock_median, mock_mad):
     assert outputted_period.neg_error == outputted_period.pos_error
     assert outputted_period.pos_error == 0.1 * 1.483 / np.sqrt(len(valid_peaks) - 1)
 
+
 @mock.patch("src.methods.gacf.median_abs_deviation", autospec=True)
 @mock.patch("src.methods.gacf.np.median", autospec=True)
 def test_find_acf_peaks_sin_short_period(mock_median, mock_mad):
@@ -137,6 +138,7 @@ def test_find_acf_peaks_sin_short_period(mock_median, mock_mad):
     assert outputted_period.method == "GACFPeriodFinder"
     assert outputted_period.neg_error == outputted_period.pos_error
     assert outputted_period.pos_error == 0.1 * 1.483 / np.sqrt(len(valid_peaks) - 1)
+
 
 @mock.patch("src.methods.gacf.median_abs_deviation", autospec=True)
 @mock.patch("src.methods.gacf.np.median", autospec=True)

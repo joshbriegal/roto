@@ -149,9 +149,7 @@ class GACFPeriodFinder(PeriodFinder):
                     break
             sigma_p = 0
             if left_idx and right_idx:
-                sigma_p = (
-                    lag_timeseries[right_idx] - lag_timeseries[left_idx]
-                )
+                sigma_p = lag_timeseries[right_idx] - lag_timeseries[left_idx]
 
             return PeriodResult(
                 period=lag_timeseries[acf_peak_indexes[0]],
