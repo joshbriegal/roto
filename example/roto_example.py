@@ -19,5 +19,5 @@ if __name__ == "__main__":
     print(df)
 
     roto = RoTo(df.timeseries, df.flux, df.flux_errors)
-    roto()
+    roto(gacf_method="peaks")
     print(roto)
