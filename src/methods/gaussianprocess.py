@@ -20,6 +20,7 @@ class GPPeriodFinder(PeriodFinder):
         timeseries: np.ndarray,
         flux: np.ndarray,
         flux_errors: Optional[np.ndarray] = None,
+        gp_seed_period: Optional[float] = None,
     ):
         """
         Args:
@@ -27,12 +28,13 @@ class GPPeriodFinder(PeriodFinder):
             flux (np.ndarray): array like flux values
             flux_errors (Optional[np.ndarray], optional): array like errors on flux values. Defaults to None.
         """
+        self.gp_seed_period = gp_seed_period
         super().__init__(timeseries, flux, flux_errors)
         #self._gp = GP(self.timeseries, self.flux, self.flux_errors)
 
 
     def calculate_periodogram(self, **kwargs) -> None:
-        """A "periodogram" does not exist for an ACF
+        """A "periodogram" does not exist for a GP
         Returns:
             None
         """
@@ -52,12 +54,12 @@ class GPPeriodFinder(PeriodFinder):
 
     def calcuate_GP_period(self, **kwargs):
         # unpack **kwargs
-        period_in = kwargs.get("period_in")
+        #self.gp_seed_period = kwargs.get("gp_seed_period")
         remove_outliers = kwargs.get("remove_outliers", False)
         rms_sigma = kwargs.get("rms_sigma", 3)
         do_mcmc = kwargs.get("do_mcmc", False)
-        tune = kwargs.get("tune", 1000)
-        draws = kwargs.get("draws", 1000)
+        tune = kwargs.get("tune", 500)
+        draws = kwargs.get("draws", 500)
         cores = kwargs.get("cores", 1)
         chains = kwargs.get("chains", 2)
         target_accept = kwargs.get("target_accept", 0.9)
@@ -94,9 +96,9 @@ class GPPeriodFinder(PeriodFinder):
             # estimate period and uncertainty
             period_samples = np.asarray(trace.posterior["period"]).flatten()
             percentiles = np.percentile(period_samples, [15.87, 50., 84.14])
-            med_p = percentiles[1]
-            sigma_n = percentiles[1] - percentiles[0]
-            sigma_p = percentiles[2] - percentiles[1]
+            med_p = float("{:.5f}".format(percentiles[1]))
+            sigma_n = float("{:.5f}".format(percentiles[1] - percentiles[0]))
+            sigma_p = float("{:.5f}".format(percentiles[2] - percentiles[1]))
             
             return PeriodResult(
                 period=med_p,
@@ -106,9 +108,9 @@ class GPPeriodFinder(PeriodFinder):
             )
 
         return PeriodResult(
-            period=map_soln["period"],
-            neg_error=np.nan,
-            pos_error=np.nan,
+            period=float("{:.5f}".format(map_soln["period"])),
+            neg_error=0.0,
+            pos_error=0.0,
             method=self.__class__.__name__,
         )
 
@@ -136,7 +138,7 @@ class GPPeriodFinder(PeriodFinder):
             sigma_rot = pm.InverseGamma(
                 "sigma_rot", **pmx.estimate_inverse_gamma_parameters(1.0, 5.0)
             )
-            log_period = pm.Normal("log_period", mu=np.log(period_in), sigma=2.0)
+            log_period = pm.Normal("log_period", mu=np.log(self.gp_seed_period), sigma=2.0)
             period = pm.Deterministic("period", tt.exp(log_period))
             log_Q0 = pm.HalfNormal("log_Q0", sigma=2.0)
             log_dQ = pm.Normal("log_dQ", mu=0.0, sigma=2.0)

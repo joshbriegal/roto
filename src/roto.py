@@ -7,6 +7,7 @@ import pandas as pd
 from src.methods.fft import FFTPeriodFinder
 from src.methods.gacf import GACFPeriodFinder
 from src.methods.lombscargle import LombScarglePeriodFinder
+from src.methods.gaussianprocess import GPPeriodFinder
 from src.methods.periodfinder import PeriodFinder, PeriodResult
 
 
@@ -16,6 +17,7 @@ class RoTo:
         "lombscargle": LombScarglePeriodFinder,
         "fft": FFTPeriodFinder,
         "gacf": GACFPeriodFinder,
+        "gp": GPPeriodFinder,
     }
 
     def __init__(
