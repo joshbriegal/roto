@@ -1,12 +1,10 @@
 from typing import Optional, Tuple
 
+import aesara_theano_fallback.tensor as tt
 import numpy as np
 import pymc3 as pm
 import pymc3_ext as pmx
-import aesara_theano_fallback.tensor as tt
-from celerite2.theano import terms, GaussianProcess
-
-from src.methods.fft import FFTPeriodFinder
+from celerite2.theano import GaussianProcess, terms
 from src.methods.periodfinder import PeriodFinder, PeriodResult
 
 
@@ -30,8 +28,7 @@ class GPPeriodFinder(PeriodFinder):
         """
         self.gp_seed_period = gp_seed_period
         super().__init__(timeseries, flux, flux_errors)
-        #self._gp = GP(self.timeseries, self.flux, self.flux_errors)
-
+        # self._gp = GP(self.timeseries, self.flux, self.flux_errors)
 
     def calculate_periodogram(self, **kwargs) -> None:
         """A "periodogram" does not exist for a GP
@@ -39,7 +36,6 @@ class GPPeriodFinder(PeriodFinder):
             None
         """
         return None
-
 
     def __call__(self, **kwargs) -> PeriodResult:
         """Overrides parent call method to allow MAP and MCMC period extraction.
@@ -51,10 +47,9 @@ class GPPeriodFinder(PeriodFinder):
         """
         return self.calcuate_GP_period(**kwargs)
 
-
     def calcuate_GP_period(self, **kwargs):
         # unpack **kwargs
-        #self.gp_seed_period = kwargs.get("gp_seed_period")
+        # self.gp_seed_period = kwargs.get("gp_seed_period")
         remove_outliers = kwargs.get("remove_outliers", False)
         rms_sigma = kwargs.get("rms_sigma", 3)
         do_mcmc = kwargs.get("do_mcmc", False)
@@ -66,17 +61,17 @@ class GPPeriodFinder(PeriodFinder):
 
         # convert data into ppt format
         fmed = np.nanmedian(self.flux)
-        self.flux_ppt = (self.flux / fmed - 1) * 1.E3
-        self.flux_errors_ppt = (self.flux_errors / fmed) * 1.E3
-        
+        self.flux_ppt = (self.flux / fmed - 1) * 1.0e3
+        self.flux_errors_ppt = (self.flux_errors / fmed) * 1.0e3
+
         # compute initial MAP solution
         model, map_soln = self.build_model()
-        
+
         # (optionally) recompute MAP solution with outliers masked
         if remove_outliers:
             resid = self.flux_ppt - map_soln0["pred"]
             rms = np.sqrt(np.nanmedian(resid ** 2))
-            mask = np.nanabs(resid) < rms_sigma * rms        
+            mask = np.nanabs(resid) < rms_sigma * rms
             model, map_soln = self.build_model(mask=mask, start=map_soln)
 
         # (optionally) run MCMC to sample from posterior
@@ -95,11 +90,11 @@ class GPPeriodFinder(PeriodFinder):
 
             # estimate period and uncertainty
             period_samples = np.asarray(trace.posterior["period"]).flatten()
-            percentiles = np.percentile(period_samples, [15.87, 50., 84.14])
+            percentiles = np.percentile(period_samples, [15.87, 50.0, 84.14])
             med_p = float("{:.5f}".format(percentiles[1]))
             sigma_n = float("{:.5f}".format(percentiles[1] - percentiles[0]))
             sigma_p = float("{:.5f}".format(percentiles[2] - percentiles[1]))
-            
+
             return PeriodResult(
                 period=med_p,
                 neg_error=sigma_n,
@@ -114,8 +109,6 @@ class GPPeriodFinder(PeriodFinder):
             method=self.__class__.__name__,
         )
 
-
-
     def build_model(self, mask=None, start=None):
         if mask is None:
             mask = np.ones(len(self.timeseries), dtype=bool)
@@ -124,7 +117,11 @@ class GPPeriodFinder(PeriodFinder):
             mean = pm.Normal("mean", mu=0.0, sigma=10.0)
 
             # White noise jitter term
-            log_jitter = pm.Normal("log_jitter", mu=np.log(np.nanmean(self.flux_errors_ppt[mask])), sigma=2.0)
+            log_jitter = pm.Normal(
+                "log_jitter",
+                mu=np.log(np.nanmean(self.flux_errors_ppt[mask])),
+                sigma=2.0,
+            )
 
             # SHOTerm kernel parameters for non-periodic variability (defaults adopted from exoplanet examples)
             sigma = pm.InverseGamma(
@@ -138,14 +135,16 @@ class GPPeriodFinder(PeriodFinder):
             sigma_rot = pm.InverseGamma(
                 "sigma_rot", **pmx.estimate_inverse_gamma_parameters(1.0, 5.0)
             )
-            log_period = pm.Normal("log_period", mu=np.log(self.gp_seed_period), sigma=2.0)
+            log_period = pm.Normal(
+                "log_period", mu=np.log(self.gp_seed_period), sigma=2.0
+            )
             period = pm.Deterministic("period", tt.exp(log_period))
             log_Q0 = pm.HalfNormal("log_Q0", sigma=2.0)
             log_dQ = pm.Normal("log_dQ", mu=0.0, sigma=2.0)
             f = pm.Uniform("f", lower=0.1, upper=1.0)
 
             # Define GP (Rotation + SHO) model
-            kernel = terms.SHOTerm(sigma=sigma, rho=rho, Q=1/3.0)
+            kernel = terms.SHOTerm(sigma=sigma, rho=rho, Q=1 / 3.0)
             kernel += terms.RotationTerm(
                 sigma=sigma_rot,
                 period=period,
@@ -156,7 +155,7 @@ class GPPeriodFinder(PeriodFinder):
             gp = GaussianProcess(
                 kernel,
                 t=self.timeseries[mask],
-                diag=self.flux_ppt[mask] ** 2 + tt.exp(2 * log_jitter),
+                diag=tt.add(self.flux_ppt[mask] ** 2, tt.exp(2 * log_jitter)),
                 mean=mean,
                 quiet=True,
             )
@@ -173,33 +172,3 @@ class GPPeriodFinder(PeriodFinder):
             map_soln = pmx.optimize(start=start)
 
             return model, map_soln
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

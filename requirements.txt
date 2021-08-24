@@ -3,3 +3,6 @@ gacf==1.0.0
 numpy>=1.21
 peakutils==1.3.3
 pandas>=1.3
+pymc3==3.11.4
+celerite2==0.2.0
+pymc3_ext==0.1.0
