@@ -2,6 +2,7 @@ from unittest import mock
 
 import numpy as np
 from numpy.testing import assert_equal
+
 from src.methods.gaussianprocess import GPPeriodFinder
 from src.methods.periodfinder import PeriodResult
 
