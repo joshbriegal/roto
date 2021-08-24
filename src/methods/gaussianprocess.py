@@ -5,6 +5,7 @@ import numpy as np
 import pymc3 as pm
 import pymc3_ext as pmx
 from celerite2.theano import GaussianProcess, terms
+
 from src.methods.periodfinder import PeriodFinder, PeriodResult
 
 
