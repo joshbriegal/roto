@@ -27,9 +27,18 @@ class GPPeriodFinder(PeriodFinder):
             flux (np.ndarray): array like flux values
             flux_errors (Optional[np.ndarray], optional): array like errors on flux values. Defaults to None.
         """
+
+        self.model: pm.model = None
+        self.solution: pm.Point = None
+        self.trace: pm.backends.base.MultiTrace = None
+
         self.gp_seed_period = gp_seed_period
         super().__init__(timeseries, flux, flux_errors)
-        # self._gp = GP(self.timeseries, self.flux, self.flux_errors)
+
+        # convert data into ppt format
+        fmed = np.nanmedian(self.flux)
+        self.flux_ppt = (self.flux / fmed - 1) * 1.0e3
+        self.flux_errors_ppt = (self.flux_errors / fmed) * 1.0e3
 
     def calculate_periodogram(self, **kwargs) -> None:
         """A "periodogram" does not exist for a GP
@@ -46,11 +55,25 @@ class GPPeriodFinder(PeriodFinder):
         Returns:
             PeriodResult: [description]
         """
-        return self.calcuate_GP_period(**kwargs)
+        return self.calcuate_gp_period(**kwargs)
 
-    def calcuate_GP_period(self, **kwargs):
+    def calcuate_gp_period(self, **kwargs):
+        """Calculate the period using a Gaussian Process.
+
+        Args:
+            remove_outliers (bool, optional): Defaults to False.
+            rms_sigma (float, optional): Defaults to 3.
+            do_mcmc (bool, optional): Defaults to False.
+            tune (int, optional): Defaults to 500.
+            draws (int, optional): Defaults to 500.
+            cores (int, optional): Defaults to 1.
+            chains (int, optional): Defaults to 2
+            target_accept (float, optional): Defaults to 0.9.
+
+        Returns:
+            PeriodResult: [description]
+        """
         # unpack **kwargs
-        # self.gp_seed_period = kwargs.get("gp_seed_period")
         remove_outliers = kwargs.get("remove_outliers", False)
         rms_sigma = kwargs.get("rms_sigma", 3)
         do_mcmc = kwargs.get("do_mcmc", False)
@@ -60,23 +83,18 @@ class GPPeriodFinder(PeriodFinder):
         chains = kwargs.get("chains", 2)
         target_accept = kwargs.get("target_accept", 0.9)
 
-        # convert data into ppt format
-        fmed = np.nanmedian(self.flux)
-        self.flux_ppt = (self.flux / fmed - 1) * 1.0e3
-        self.flux_errors_ppt = (self.flux_errors / fmed) * 1.0e3
-
         # compute initial MAP solution
         model, map_soln = self.build_model()
 
         # (optionally) recompute MAP solution with outliers masked
         if remove_outliers:
-            resid = self.flux_ppt - map_soln0["pred"]
-            rms = np.sqrt(np.nanmedian(resid ** 2))
-            mask = np.nanabs(resid) < rms_sigma * rms
+            residuals = self.flux_ppt - map_soln["pred"]
+            rms = np.sqrt(np.nanmedian(residuals ** 2))
+            mask = np.abs(residuals) < rms_sigma * rms
             model, map_soln = self.build_model(mask=mask, start=map_soln)
 
         # (optionally) run MCMC to sample from posterior
-        if do_mcmc:
+        if do_mcmc and model:
             with model:
                 trace = pmx.sample(
                     tune=tune,
@@ -96,6 +114,8 @@ class GPPeriodFinder(PeriodFinder):
             sigma_n = float("{:.5f}".format(percentiles[1] - percentiles[0]))
             sigma_p = float("{:.5f}".format(percentiles[2] - percentiles[1]))
 
+            self.trace = trace
+
             return PeriodResult(
                 period=med_p,
                 neg_error=sigma_n,
@@ -110,7 +130,19 @@ class GPPeriodFinder(PeriodFinder):
             method=self.__class__.__name__,
         )
 
-    def build_model(self, mask=None, start=None):
+    def build_model(
+        self, mask: Optional[np.ndarray] = None, start: Optional[pm.Point] = None
+    ) -> Tuple[pm.Model, pm.Point]:
+        """Build a stellar variability Gaussian Process Model.
+        Optimise starting point by finding maximum a posteriori parameters.
+
+        Args:
+            mask (np.ndarray, optional): Masking array to apply to timeseries. Defaults to None (unmasked).
+            start (pymc3 Point, optional): Starting point for initial solution. Defaults to None (model.test_point).
+
+        Returns:
+            Tuple[pm.Model, pm.Point]: Tuple containing the model and an optimised starting point.
+        """
         if mask is None:
             mask = np.ones(len(self.timeseries), dtype=bool)
 
@@ -171,5 +203,8 @@ class GPPeriodFinder(PeriodFinder):
             if start is None:
                 start = model.test_point
             map_soln = pmx.optimize(start=start)
+
+            self.model = model
+            self.solution = map_soln
 
             return model, map_soln

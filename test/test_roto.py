@@ -13,6 +13,7 @@ inverse_methods_dictionary = {method: name for name, method in RoTo.METHODS.item
         {"lombscargle": {"normalization": True, "fit_mean": False}},
         {"gacf": {}},
         {"fft": {}},
+        {"gp": {}}
     ],
 )
 def test_create_roto(method_parameters, timeseries, flux, flux_errors):
