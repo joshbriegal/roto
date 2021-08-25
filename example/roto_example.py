@@ -22,7 +22,6 @@ if __name__ == "__main__":
         df.timeseries,
         df.flux,
         df.flux_errors,
-        {"gp": {"gp_seed_period": 3.5}, "lombscargle": {}, "gacf": {}, "fft": {}},
     )
     roto(gacf_method="peaks", do_mcmc=True, remove_outliers=True)
     print(roto)

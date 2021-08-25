@@ -1,5 +1,4 @@
-import inspect
-from typing import List, Optional
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -8,7 +7,6 @@ from src.methods.fft import FFTPeriodFinder
 from src.methods.gacf import GACFPeriodFinder
 from src.methods.gaussianprocess import GPPeriodFinder
 from src.methods.lombscargle import LombScarglePeriodFinder
-from src.methods.periodfinder import PeriodFinder, PeriodResult
 
 
 class RoTo:
@@ -17,7 +15,7 @@ class RoTo:
         "lombscargle": LombScarglePeriodFinder,
         "fft": FFTPeriodFinder,
         "gacf": GACFPeriodFinder,
-        "gp": GPPeriodFinder,
+        "gp": GPPeriodFinder,  # keep at end of dictionary to allow seed period generation from other methods.
     }
 
     def __init__(
@@ -34,28 +32,34 @@ class RoTo:
 
         self.methods = self._parse_constructor_parameters(methods_parameters)
 
-        self.periods = None
+        self.periods = []
 
-    def _parse_constructor_parameters(self, methods_parameters: Optional[dict]) -> list:
+    def _parse_constructor_parameters(self, methods_parameters: Optional[dict]) -> dict:
         if methods_parameters is None:
-            return [
-                method(self.timeseries, self.flux, self.flux_errors)
-                for method in self.METHODS.values()
-            ]
+            return {
+                name: method(self.timeseries, self.flux, self.flux_errors)
+                for name, method in self.METHODS.items()
+            }
 
-        methods = []
+        methods = {}
         for method, kwargs in methods_parameters.items():
-            methods.append(
-                self.METHODS[method](
-                    self.timeseries, self.flux, self.flux_errors, **kwargs
-                )
+            methods[method] = self.METHODS[method](
+                self.timeseries, self.flux, self.flux_errors, **kwargs
             )
 
         return methods
 
     def __call__(self, **kwargs):
 
-        self.periods = [method(**kwargs) for method in self.methods]
+        for name, method in self.methods.items():
+            if name == "gp":
+                if "gp_seed_period" not in kwargs:
+                    average_period = np.median(
+                        [period_result.period for period_result in self.periods]
+                    )
+                    kwargs["gp_seed_period"] = average_period
+
+            self.periods.append(method(**kwargs))
 
     def periods_to_table(self):
 

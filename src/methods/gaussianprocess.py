@@ -26,6 +26,7 @@ class GPPeriodFinder(PeriodFinder):
             timeseries (np.ndarray): array like time series.
             flux (np.ndarray): array like flux values
             flux_errors (Optional[np.ndarray], optional): array like errors on flux values. Defaults to None.
+            gp_seed_period (Optional, float): Starting period for GP. Can also be specified at run time.
         """
 
         self.model: pm.model = None
@@ -61,6 +62,7 @@ class GPPeriodFinder(PeriodFinder):
         """Calculate the period using a Gaussian Process.
 
         Args:
+            gp_seed_period (Optional, float): Starting period for GP. Can also be specified at instantiation.
             remove_outliers (bool, optional): Defaults to False.
             rms_sigma (float, optional): Defaults to 3.
             do_mcmc (bool, optional): Defaults to False.
@@ -74,6 +76,7 @@ class GPPeriodFinder(PeriodFinder):
             PeriodResult: [description]
         """
         # unpack **kwargs
+        self.gp_seed_period = kwargs.get("gp_seed_period", self.gp_seed_period)
         remove_outliers = kwargs.get("remove_outliers", False)
         rms_sigma = kwargs.get("rms_sigma", 3)
         do_mcmc = kwargs.get("do_mcmc", False)
