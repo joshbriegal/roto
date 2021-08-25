@@ -37,32 +37,31 @@ def test_create_roto_only_gp(timeseries, flux, flux_errors):
 
     assert list(roto.methods.keys()) == ["lombscargle", "gp"]
 
-    
+
 @mock.patch("src.roto.LombScarglePeriodFinder", autospec=True)
 @mock.patch("src.roto.FFTPeriodFinder", autospec=True)
 @mock.patch("src.roto.GACFPeriodFinder", autospec=True)
-def test_call(mock_gacf, mock_fft, mock_ls, timeseries, flux, flux_errors):
+@mock.patch("src.roto.GPPeriodFinder", autospec=True)
+def test_call(mock_gp, mock_gacf, mock_fft, mock_ls, timeseries, flux, flux_errors):
 
     mock_gacf_object = mock.Mock(return_value=PeriodResult(1))
-    mock_fft_object = mock.Mock(return_value=PeriodResult(1))
-    mock_ls_object = mock.Mock(return_value=PeriodResult(1))
+    mock_fft_object = mock.Mock(return_value=PeriodResult(420))
+    mock_ls_object = mock.Mock(return_value=PeriodResult(69))
+    mock_gp_object = mock.Mock(return_value=PeriodResult(1))
 
     mock_gacf.return_value = mock_gacf_object
     mock_fft.return_value = mock_fft_object
     mock_ls.return_value = mock_ls_object
+    mock_gp.return_value = mock_gp_object
 
     with mock.patch.dict(
         RoTo.METHODS,
-        {
-            "lombscargle": mock_ls,
-            "fft": mock_fft,
-            "gacf": mock_gacf,
-        },
+        {"lombscargle": mock_ls, "fft": mock_fft, "gacf": mock_gacf, "gp": mock_gp},
     ) as patched_dict:
 
         roto = RoTo(timeseries, flux, flux_errors)
 
-        kwargs = {"some": "random", "keywords": True}
+        kwargs = {"some": "random", "keywords": True, "gp_seed_period": 7}
 
         roto(**kwargs)
         print(roto)
@@ -70,6 +69,7 @@ def test_call(mock_gacf, mock_fft, mock_ls, timeseries, flux, flux_errors):
         mock_gacf_object.assert_called_once_with(**kwargs)
         mock_fft_object.assert_called_once_with(**kwargs)
         mock_ls_object.assert_called_once_with(**kwargs)
+        mock_gp_object.assert_called_once_with(**kwargs)
 
         # check no extra calls have been made.
         # note this may fail if we allow multiple periods per method.
