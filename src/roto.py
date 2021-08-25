@@ -42,6 +42,10 @@ class RoTo:
             }
 
         methods = {}
+        if list(methods_parameters.keys()) == ["gp"]:
+            # if just a GP, use a lomb scargle also to seed GP period.
+            methods_parameters = {"lombscargle": {}, **methods_parameters}
+            
         for method, kwargs in methods_parameters.items():
             methods[method] = self.METHODS[method](
                 self.timeseries, self.flux, self.flux_errors, **kwargs
