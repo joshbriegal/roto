@@ -18,6 +18,10 @@ if __name__ == "__main__":
     print("Imported the following light curve: ")
     print(df)
 
-    roto = RoTo(df.timeseries, df.flux, df.flux_errors)
-    roto(gacf_method="peaks")
+    roto = RoTo(
+        df.timeseries,
+        df.flux,
+        df.flux_errors,
+    )
+    roto(gacf_method="peaks", do_mcmc=True, remove_outliers=True)
     print(roto)
