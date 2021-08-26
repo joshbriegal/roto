@@ -31,6 +31,7 @@ class GPPeriodFinder(PeriodFinder):
 
         self.model: pm.model = None
         self.solution: pm.Point = None
+        self.gp: GaussianProcess = None
         self.trace: pm.backends.base.MultiTrace = None
 
         self.gp_seed_period = gp_seed_period
@@ -124,6 +125,7 @@ class GPPeriodFinder(PeriodFinder):
                 neg_error=sigma_n,
                 pos_error=sigma_p,
                 method=self.__class__.__name__,
+                period_distribution=period_samples,
             )
 
         return PeriodResult(
@@ -207,7 +209,74 @@ class GPPeriodFinder(PeriodFinder):
                 start = model.test_point
             map_soln = pmx.optimize(start=start)
 
+            self.gp = gp
             self.model = model
             self.solution = map_soln
 
             return model, map_soln
+
+    def plot(self, ax, period: PeriodResult) -> None:
+        """Given a figure and an axis plot the interesting output of the object.
+
+        Args:
+            ax ([type]): Matplotlib axis
+            period (PeriodResult): Outputted period to plot around
+        """
+        nperiods = 10
+        xmin = 0
+        xmax = 1
+
+        if period.period_distribution is not None:
+            xmin = period.period - 5 * period.neg_error
+            xmax = min(
+                period.period + 5 * period.pos_error, max(period.period_distribution)
+            )
+
+            bin_size = (period.neg_error + period.pos_error) / 5
+
+            ax.hist(
+                period.period_distribution,
+                histtype='step',
+                bins=np.linspace(
+                    xmin - period.neg_error, xmax + period.pos_error
+                ),
+            )
+
+        ax.set_xlim([xmin, xmax])
+        ax2 = ax.twinx()
+        ax2.set_ylim([0, 1])
+        ax2.get_yaxis().set_visible(False)
+
+        ax2.errorbar(
+            period.period,
+            0.5,
+            xerr=[[period.neg_error], [period.pos_error]],
+            ms=10,
+            marker="s",
+            c="k",
+            capsize=10,
+        )
+
+        ax.set_xlabel("Period")
+        ax.set_yticks([])
+        ax.set_ylabel("Period Posterior")
+        ax.set_title("Gaussian Process Model")
+
+    def plot_gp_predictions(self, ax) -> None:
+        """Plot GP model predictions.
+
+        Args:
+            ax ([type]):  Matplotlib axis
+        """
+        model_timeseries = np.linspace(self.timeseries.min()-5, self.timeseries.max()+5, 2000)
+        mu, var = self.gp.predict(self.flux, t=model_timeseries, return_var=True)
+        mu += self.solution["mean"]
+        std = np.sqrt(var)
+
+        line = ax.fill_between(model_timeseries, mu+std, mu-std, color="orange", alpha=0.3, zorder=1)
+        line.set_edgecolor("none")
+
+        ax.plot(model_timeseries, mu, color="orange", zorder=2)
+
+
+

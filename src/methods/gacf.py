@@ -28,6 +28,8 @@ class GACFPeriodFinder(PeriodFinder):
         """
         super().__init__(timeseries, flux, flux_errors)
         self._gacf = GACF(self.timeseries, self.flux, self.flux_errors)
+        self.lag_timeseries = None
+        self.correlations = None
 
     def calculate_periodogram(self, **kwargs) -> None:
         """A "periodogram" does not exist for an ACF
@@ -82,9 +84,9 @@ class GACFPeriodFinder(PeriodFinder):
             PeriodResult: [description]
         """
 
-        lag_timeseries, correlations = self.calculate_autocorrelation(**kwargs)
+        self.lag_timeseries, self.correlations = self.calculate_autocorrelation(**kwargs)
         if gacf_method == "fft":
-            fft = FFTPeriodFinder(lag_timeseries, correlations)
+            fft = FFTPeriodFinder(self.lag_timeseries, self.correlations)
             fft_period = fft(**kwargs)
             return PeriodResult(
                 period=fft_period.period,
@@ -93,7 +95,7 @@ class GACFPeriodFinder(PeriodFinder):
                 method=self.__class__.__name__,
             )
         elif gacf_method == "peaks":
-            return self.find_acf_peaks(lag_timeseries, correlations)
+            return self.find_acf_peaks(self.lag_timeseries, self.correlations)
 
     def find_acf_peaks(
         self, lag_timeseries: np.ndarray, correlation: np.ndarray
@@ -247,3 +249,27 @@ class GACFPeriodFinder(PeriodFinder):
             pos_error=sigma_p,
             method=self.__class__.__name__,
         )
+
+    def plot(self, ax, period: PeriodResult) -> None:
+        """Given a figure and an axis plot the interesting output of the object.
+
+        Args:
+            ax ([type]): Matplotlib axis
+            period (PeriodResult): Outputted period to plot around
+        """
+        if (self.lag_timeseries is None) or (self.correlations is None):
+            self()
+
+        ax.scatter(self.lag_timeseries, self.correlations, s=1)
+
+        ax.axvline(period.period, color="orange", lw=1)
+        ax.axvspan(period.period - period.neg_error, period.period + period.pos_error, color='orange', alpha=0.5)
+
+        ax.set_xlim([0, min(5 * period.period, self.lag_timeseries[-1])])
+
+        ax.set_xlabel("Lag time")
+        ax.set_ylabel("G-ACF Power")
+        ax.set_title("G-ACF")
+
+
+

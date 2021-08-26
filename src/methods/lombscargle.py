@@ -1,9 +1,8 @@
-from typing import Optional, Tuple
+from typing import Optional
 
 import numpy as np
 from astropy.timeseries import LombScargle
-
-from src.methods.periodfinder import PeriodFinder, Periodogram
+from src.methods.periodfinder import PeriodFinder, Periodogram, PeriodResult
 
 
 class LombScarglePeriodFinder(PeriodFinder):
@@ -83,3 +82,13 @@ class LombScarglePeriodFinder(PeriodFinder):
                 maximum_frequency=maximum_frequency,
             )
         )
+
+    def plot(self, ax, period: PeriodResult) -> None:
+        """Given a figure and an axis plot the interesting output of the object.
+
+        Args:
+            ax ([type]): Matplotlib axis
+            period (PeriodResult): Outputted period to plot around
+        """
+        self.plot_periodogram(ax, period)
+        ax.set_title("Lomb Scargle Periodogram")

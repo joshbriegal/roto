@@ -2,8 +2,7 @@ from typing import Optional
 
 import numpy as np
 import numpy.fft as fft
-
-from src.methods.periodfinder import PeriodFinder, Periodogram
+from src.methods.periodfinder import PeriodFinder, Periodogram, PeriodResult
 
 
 class FFTPeriodFinder(PeriodFinder):
@@ -65,3 +64,13 @@ class FFTPeriodFinder(PeriodFinder):
         freqs = fft.rfftfreq(len_ft, self.timeseries[1] - self.timeseries[0])
 
         return Periodogram(frequency_axis=freqs, power_axis=real_ft)
+
+    def plot(self, ax, period: PeriodResult) -> None:
+        """Given a figure and an axis plot the interesting output of the object.
+
+        Args:
+            ax ([type]): Matplotlib axis
+            period (PeriodResult): Outputted period to plot around
+        """
+        self.plot_periodogram(ax, period)
+        ax.set_title("FFT Periodogram")
