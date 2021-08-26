@@ -1,6 +1,7 @@
 from unittest import mock
 
 import pytest
+
 from src.methods.periodfinder import PeriodFinder, PeriodResult
 from src.roto import RoTo
 
