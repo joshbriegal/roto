@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 import numpy as np
 import pandas as pd
@@ -87,22 +87,52 @@ class RoTo:
     def __str__(self):
         return self.periods_to_table().to_string(index=False)
 
-    def best_period(self, method: str = "mean") -> PeriodResult:
+    def best_period(self, method: str = "mean", include: Optional[List] =  [], exclude: Optional[List] = []) -> PeriodResult:
+        """Calculate best period based on methods already run. If called before 
+        running the period finding methods, will return None.
+
+        Args:
+            method (str, optional): [description]. Defaults to "mean".
+            include (Optional[List], optional): [description]. Defaults to [].
+            exclude (Optional[List], optional): [description]. Defaults to [].
+
+        Raises:
+            ValueError: [description]
+
+        Returns:
+            PeriodResult: [description]
+        """
         if not self.periods:
             return None
 
+        periods_to_use = self.periods
+
+        try:
+            if include:
+                include_classes = [self.METHODS[method_to_include].__name__ for method_to_include in include]
+                periods_to_use = [period_result for period_result in periods_to_use if period_result.method in include_classes]
+            if exclude:
+                exclude_classes = [self.METHODS[method_to_exclude].__name__ for method_to_exclude in exclude]
+                periods_to_use = [period_result for period_result in periods_to_use if period_result.method not in exclude_classes]
+
+            if not periods_to_use:
+                raise ValueError("Provided incompatible list of include / exclude values. No best period calculated. \n include: {include} \n exclude: {exclude}")
+
+        except KeyError:
+            raise ValueError(f"Unable to parse include / exclude values given. \n include: {include} \n exclude: {exclude}")
+
         if method == "mean":
-            mean = np.mean([p.period for p in self.periods])
-            std = np.std([p.period for p in self.periods]) / np.sqrt(len(self.periods))
+            mean = np.mean([p.period for p in periods_to_use])
+            std = np.std([p.period for p in periods_to_use]) / np.sqrt(len(periods_to_use))
             return PeriodResult(
                 period=mean, neg_error=std, pos_error=std, method="CombinedPeriodResult"
             )
         elif method == "median":
-            median = np.median([p.period for p in self.periods])
+            median = np.median([p.period for p in periods_to_use])
             std = (
                 1.4826
-                * median_abs_deviation([p.period for p in self.periods])
-                / np.sqrt(len(self.periods))
+                * median_abs_deviation([p.period for p in periods_to_use])
+                / np.sqrt(len(periods_to_use))
             )
             return PeriodResult(
                 period=median,
@@ -114,7 +144,7 @@ class RoTo:
             for periodresult in self.periods:
                 if periodresult.method == self.METHODS[method].__name__:
                     return periodresult
-        else:
-            raise ValueError(
-                f"Parameter 'method' must be one of ['mean', 'median'] or {list(self.METHODS.keys())}]"
-            )
+
+        raise ValueError(
+            f"Parameter 'method' must be one of ['mean', 'median'] or {list(self.METHODS.keys())}]. Did you specify a period extraction method not run?"
+        )

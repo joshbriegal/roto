@@ -101,3 +101,108 @@ def test_best_period(
     best_period = roto.best_period(method)
 
     assert best_period == PeriodResult(period, error, error, outputted_method)
+
+@mock.patch("src.roto.np.mean", autospec=True, return_value=69)
+@mock.patch("src.roto.np.std", autospec=True, return_value=2)
+@mock.patch("src.roto.np.sqrt", autospec=True, return_value=1)
+@pytest.mark.parametrize(
+    "include, periods",
+    [
+        ([], [1.0, 3.0, 4.0, 5.0]),
+        (["lombscargle"], [1.0]),
+        (["gp", "gacf"], [4.0, 5.0]),
+    ],
+)
+def test_best_period_include(
+    mock_sqrt, mock_std, mock_mean, include, periods, timeseries, flux, flux_errors
+):
+
+    roto = RoTo(timeseries, flux, flux_errors)
+
+    roto.periods = [
+        PeriodResult(1.0, 0.0, 0.0, "LombScarglePeriodFinder"),
+        PeriodResult(3.0, 0.0, 0.0, "FFTPeriodFinder"),
+        PeriodResult(4.0, 0.0, 0.0, "GACFPeriodFinder"),
+        PeriodResult(5.0, 0.0, 0.0, "GPPeriodFinder"),
+    ]
+
+    best_period = roto.best_period("mean", include=include)
+
+    mock_mean.assert_called_once_with(periods)
+    mock_std.assert_called_once_with(periods)
+    mock_sqrt.assert_called_once_with(len(periods))
+
+    assert best_period == PeriodResult(69, 2, 2, "CombinedPeriodResult")
+
+
+def test_best_period_include_wrong_type(
+    timeseries, flux, flux_errors
+):
+
+    roto = RoTo(timeseries, flux, flux_errors)
+
+    roto.periods = [
+        PeriodResult(1.0, 0.0, 0.0, "LombScarglePeriodFinder"),
+    ]
+
+    with pytest.raises(ValueError) as err:
+        roto.best_period("mean", include=["non_existent_method"])
+
+@mock.patch("src.roto.np.mean", autospec=True, return_value=69)
+@mock.patch("src.roto.np.std", autospec=True, return_value=2)
+@mock.patch("src.roto.np.sqrt", autospec=True, return_value=1)
+@pytest.mark.parametrize(
+    "exclude, periods",
+    [
+        ([], [1.0, 3.0, 4.0, 5.0]),
+        (["lombscargle"], [3.0, 4.0, 5.0]),
+        (["gp", "gacf"], [1.0, 3.0]),
+    ],
+)
+def test_best_period_exclude(
+    mock_sqrt, mock_std, mock_mean, exclude, periods, timeseries, flux, flux_errors
+):
+
+    roto = RoTo(timeseries, flux, flux_errors)
+
+    roto.periods = [
+        PeriodResult(1.0, 0.0, 0.0, "LombScarglePeriodFinder"),
+        PeriodResult(3.0, 0.0, 0.0, "FFTPeriodFinder"),
+        PeriodResult(4.0, 0.0, 0.0, "GACFPeriodFinder"),
+        PeriodResult(5.0, 0.0, 0.0, "GPPeriodFinder"),
+    ]
+
+    best_period = roto.best_period("mean", exclude=exclude)
+
+    mock_mean.assert_called_once_with(periods)
+    mock_std.assert_called_once_with(periods)
+    mock_sqrt.assert_called_once_with(len(periods))
+
+    assert best_period == PeriodResult(69, 2, 2, "CombinedPeriodResult")
+
+def test_best_period_exclude_wrong_type(
+    timeseries, flux, flux_errors
+):
+
+    roto = RoTo(timeseries, flux, flux_errors)
+
+    roto.periods = [
+        PeriodResult(1.0, 0.0, 0.0, "LombScarglePeriodFinder"),
+    ]
+
+    with pytest.raises(ValueError) as err:
+        roto.best_period("mean", exclude=["non_existent_method"])
+
+
+def test_best_period_include_exclude_incompatible(
+    timeseries, flux, flux_errors
+):
+
+    roto = RoTo(timeseries, flux, flux_errors)
+
+    roto.periods = [
+        PeriodResult(1.0, 0.0, 0.0, "LombScarglePeriodFinder"),
+    ]
+
+    with pytest.raises(ValueError) as err:
+        roto.best_period("mean", exclude=["lombscargle"], include=["lombscargle"])
