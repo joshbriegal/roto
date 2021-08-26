@@ -87,8 +87,13 @@ class RoTo:
     def __str__(self):
         return self.periods_to_table().to_string(index=False)
 
-    def best_period(self, method: str = "mean", include: Optional[List] =  [], exclude: Optional[List] = []) -> PeriodResult:
-        """Calculate best period based on methods already run. If called before 
+    def best_period(
+        self,
+        method: str = "mean",
+        include: Optional[List] = [],
+        exclude: Optional[List] = [],
+    ) -> PeriodResult:
+        """Calculate best period based on methods already run. If called before
         running the period finding methods, will return None.
 
         Args:
@@ -109,21 +114,41 @@ class RoTo:
 
         try:
             if include:
-                include_classes = [self.METHODS[method_to_include].__name__ for method_to_include in include]
-                periods_to_use = [period_result for period_result in periods_to_use if period_result.method in include_classes]
+                include_classes = [
+                    self.METHODS[method_to_include].__name__
+                    for method_to_include in include
+                ]
+                periods_to_use = [
+                    period_result
+                    for period_result in periods_to_use
+                    if period_result.method in include_classes
+                ]
             if exclude:
-                exclude_classes = [self.METHODS[method_to_exclude].__name__ for method_to_exclude in exclude]
-                periods_to_use = [period_result for period_result in periods_to_use if period_result.method not in exclude_classes]
+                exclude_classes = [
+                    self.METHODS[method_to_exclude].__name__
+                    for method_to_exclude in exclude
+                ]
+                periods_to_use = [
+                    period_result
+                    for period_result in periods_to_use
+                    if period_result.method not in exclude_classes
+                ]
 
             if not periods_to_use:
-                raise ValueError("Provided incompatible list of include / exclude values. No best period calculated. \n include: {include} \n exclude: {exclude}")
+                raise ValueError(
+                    "Provided incompatible list of include / exclude values. No best period calculated. \n include: {include} \n exclude: {exclude}"
+                )
 
         except KeyError:
-            raise ValueError(f"Unable to parse include / exclude values given. \n include: {include} \n exclude: {exclude}")
+            raise ValueError(
+                f"Unable to parse include / exclude values given. \n include: {include} \n exclude: {exclude}"
+            )
 
         if method == "mean":
             mean = np.mean([p.period for p in periods_to_use])
-            std = np.std([p.period for p in periods_to_use]) / np.sqrt(len(periods_to_use))
+            std = np.std([p.period for p in periods_to_use]) / np.sqrt(
+                len(periods_to_use)
+            )
             return PeriodResult(
                 period=mean, neg_error=std, pos_error=std, method="CombinedPeriodResult"
             )

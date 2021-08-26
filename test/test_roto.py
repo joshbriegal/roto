@@ -1,7 +1,6 @@
 from unittest import mock
 
 import pytest
-
 from src.methods.periodfinder import PeriodFinder, PeriodResult
 from src.roto import RoTo
 
@@ -102,6 +101,7 @@ def test_best_period(
 
     assert best_period == PeriodResult(period, error, error, outputted_method)
 
+
 @mock.patch("src.roto.np.mean", autospec=True, return_value=69)
 @mock.patch("src.roto.np.std", autospec=True, return_value=2)
 @mock.patch("src.roto.np.sqrt", autospec=True, return_value=1)
@@ -135,9 +135,7 @@ def test_best_period_include(
     assert best_period == PeriodResult(69, 2, 2, "CombinedPeriodResult")
 
 
-def test_best_period_include_wrong_type(
-    timeseries, flux, flux_errors
-):
+def test_best_period_include_wrong_type(timeseries, flux, flux_errors):
 
     roto = RoTo(timeseries, flux, flux_errors)
 
@@ -147,6 +145,7 @@ def test_best_period_include_wrong_type(
 
     with pytest.raises(ValueError) as err:
         roto.best_period("mean", include=["non_existent_method"])
+
 
 @mock.patch("src.roto.np.mean", autospec=True, return_value=69)
 @mock.patch("src.roto.np.std", autospec=True, return_value=2)
@@ -180,9 +179,8 @@ def test_best_period_exclude(
 
     assert best_period == PeriodResult(69, 2, 2, "CombinedPeriodResult")
 
-def test_best_period_exclude_wrong_type(
-    timeseries, flux, flux_errors
-):
+
+def test_best_period_exclude_wrong_type(timeseries, flux, flux_errors):
 
     roto = RoTo(timeseries, flux, flux_errors)
 
@@ -194,9 +192,7 @@ def test_best_period_exclude_wrong_type(
         roto.best_period("mean", exclude=["non_existent_method"])
 
 
-def test_best_period_include_exclude_incompatible(
-    timeseries, flux, flux_errors
-):
+def test_best_period_include_exclude_incompatible(timeseries, flux, flux_errors):
 
     roto = RoTo(timeseries, flux, flux_errors)
 
