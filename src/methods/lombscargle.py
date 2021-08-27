@@ -67,6 +67,11 @@ class LombScarglePeriodFinder(PeriodFinder):
         minimum_frequency = kwargs.get("minimum_frequency", None)
         maximum_frequency = kwargs.get("maximum_frequency", None)
 
+        if maximum_frequency is None:
+            # set max frequency to nyquist limit to prevent small spurious periods.
+            min_timestamp_diff = np.min(np.diff(self.timeseries))
+            maximum_frequency = 1.0 / (nyquist_factor * min_timestamp_diff)
+
         return Periodogram(
             *self._lombscargle.autopower(
                 method=method,
