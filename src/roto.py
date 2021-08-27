@@ -212,8 +212,7 @@ class RoTo:
         for method_name, method in self.methods.items():
             if method_name == "gp":
                 if plot_gp:
-                    pass
-                    # method.plot_gp_predictions(ax_dict["data"])
+                    method.plot_gp_predictions(ax_dict["data"])
             method.plot(
                 ax_dict[method_name]["method"],
                 self.periods[method_name],
@@ -275,6 +274,23 @@ class RoTo:
         ax.set_title(str(best_period))
 
         ax.legend()
+
+    def plot_gp_diagnostics(self, show: bool = True, savefig: bool = False, filename: str = ""):
+        if "gp" not in self.methods:
+            raise RuntimeError("Cannot plot GP diagnostics, no GP method found.")
+
+        if savefig and not filename:
+            filename = f"{self.name}.pdf"
+
+        try:
+            self.methods["gp"].plot_trace(show=show, savefig=savefig, filename=filename)
+        except RuntimeError as trace_err:
+            print(trace_err)
+        try:
+            self.methods["gp"].plot_distributions(show=show, savefig=savefig, filename=filename)
+        except (RuntimeError, ValueError) as dist_err:
+            print(dist_err)
+
 
     def plot_data(self, ax):
         ax.scatter(self.timeseries, self.flux, s=1)

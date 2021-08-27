@@ -1,10 +1,13 @@
+from os.path import splitext
 from typing import Optional, Tuple
 
 import aesara_theano_fallback.tensor as tt
 import numpy as np
 import pymc3 as pm
 import pymc3_ext as pmx
+from corner import corner
 from celerite2.theano import GaussianProcess, terms
+import matplotlib.pyplot as plt
 
 from src.methods.periodfinder import PeriodFinder, PeriodResult
 
@@ -36,6 +39,7 @@ class GPPeriodFinder(PeriodFinder):
 
         self.gp_seed_period = gp_seed_period
         super().__init__(timeseries, flux, flux_errors)
+        self.mask = np.ones(len(self.timeseries), dtype=bool)
 
         # convert data into ppt format
         fmed = np.nanmedian(self.flux)
@@ -94,8 +98,8 @@ class GPPeriodFinder(PeriodFinder):
         if remove_outliers:
             residuals = self.flux_ppt - map_soln["pred"]
             rms = np.sqrt(np.nanmedian(residuals ** 2))
-            mask = np.abs(residuals) < rms_sigma * rms
-            model, map_soln = self.build_model(mask=mask, start=map_soln)
+            self.mask = np.abs(residuals) < rms_sigma * rms
+            model, map_soln = self.build_model(start=map_soln)
 
         # (optionally) run MCMC to sample from posterior
         if do_mcmc and model:
@@ -136,20 +140,17 @@ class GPPeriodFinder(PeriodFinder):
         )
 
     def build_model(
-        self, mask: Optional[np.ndarray] = None, start: Optional[pm.Point] = None
+        self, start: Optional[pm.Point] = None
     ) -> Tuple[pm.Model, pm.Point]:
         """Build a stellar variability Gaussian Process Model.
         Optimise starting point by finding maximum a posteriori parameters.
 
         Args:
-            mask (np.ndarray, optional): Masking array to apply to timeseries. Defaults to None (unmasked).
             start (pymc3 Point, optional): Starting point for initial solution. Defaults to None (model.test_point).
 
         Returns:
             Tuple[pm.Model, pm.Point]: Tuple containing the model and an optimised starting point.
         """
-        if mask is None:
-            mask = np.ones(len(self.timeseries), dtype=bool)
 
         with pm.Model() as model:
             mean = pm.Normal("mean", mu=0.0, sigma=10.0)
@@ -157,7 +158,7 @@ class GPPeriodFinder(PeriodFinder):
             # White noise jitter term
             log_jitter = pm.Normal(
                 "log_jitter",
-                mu=np.log(np.nanmean(self.flux_errors_ppt[mask])),
+                mu=np.log(np.nanmean(self.flux_errors_ppt[self.mask])),
                 sigma=2.0,
             )
 
@@ -192,17 +193,17 @@ class GPPeriodFinder(PeriodFinder):
             )
             gp = GaussianProcess(
                 kernel,
-                t=self.timeseries[mask],
-                diag=tt.add(self.flux_ppt[mask] ** 2, tt.exp(2 * log_jitter)),
+                t=self.timeseries[self.mask],
+                diag=tt.add(self.flux_ppt[self.mask] ** 2, tt.exp(2 * log_jitter)),
                 mean=mean,
                 quiet=True,
             )
 
             # Compute the GP likelihood and add it into the PyMC3 model as a "potential"
-            gp.marginal("gp", observed=self.flux_ppt[mask])
+            gp.marginal("gp", observed=self.flux_ppt[self.mask])
 
             # Compute the mean model prediction for plotting purposes
-            pm.Deterministic("pred", gp.predict(self.flux_ppt[mask]))
+            pm.Deterministic("pred", gp.predict(self.flux_ppt[self.mask]))
 
             # Optimize to find the maximum a posteriori parameters
             if start is None:
@@ -269,7 +270,11 @@ class GPPeriodFinder(PeriodFinder):
         model_timeseries = np.linspace(
             self.timeseries.min() - 5, self.timeseries.max() + 5, 2000
         )
-        mu, var = self.gp.predict(self.flux, t=model_timeseries, return_var=True)
+        mu, var = pmx.eval_in_model(
+            self.gp.predict(self.flux[self.mask], t=model_timeseries, return_var=True),
+            point=self.solution,
+            model=self.model,
+        )
         mu += self.solution["mean"]
         std = np.sqrt(var)
 
@@ -279,3 +284,56 @@ class GPPeriodFinder(PeriodFinder):
         line.set_edgecolor("none")
 
         ax.plot(model_timeseries, mu, color="orange", zorder=2)
+
+    def plot_trace(self, show: bool = True, savefig: bool = False, filename: str = ""):
+        """Plot trace using arviZ plot_trace.
+
+        Args:
+            show (bool, optional): Show using e.g. interactive backend. Defaults to True.
+            savefig (bool, optional): Save figure. Defaults to False.
+            filename (str, optional): Filename to save figure. Defaults to "" (saves as '_trace.pdf')
+
+        Raises:
+            RuntimeError: If no trace, will raise RuntimeError
+        """
+
+        if self.trace:
+            pm.traceplot(self.trace, show=show)
+
+            if savefig:
+                plt.savefig(splitext(filename)[0] + "_trace.pdf")
+        else:
+            raise RuntimeError("Cannot plot trace as no trace generated")
+
+    def plot_distributions(
+        self, show: bool = True, savefig: bool = False, filename: str = ""
+    ):
+        """Plot outputted parameter distributions corner plot.
+
+        Args:
+            show (bool, optional): Show using e.g. interactive backend. Defaults to True.
+            savefig (bool, optional): Save figure. Defaults to False.
+            filename (str, optional): Filename to save figure. Defaults to "" (saves as '_distributions.pdf')
+
+        Raises:
+            RuntimeError: If no solution, will raise RuntimeError
+        """
+        if self.solution:
+
+            names = [
+                k for k in self.solution.keys() if (k[-2:] != "__") and (k != "pred")
+            ]
+
+            fig = corner(
+                self.solution,
+                names=names,
+                quantiles=[0.15865, 0.5, 0.84135],
+                show_titles=True,
+                max_n_ticks=4,
+            )
+            if show:
+                plt.show()
+            if savefig:
+                fig.savefig(splitext(filename)[0] + "_distributions.pdf")
+        else:
+            raise RuntimeError("Cannot plot distributions as no solution found.")
