@@ -1,18 +1,18 @@
+from itertools import cycle
 from typing import List, Optional
 
+import matplotlib.cm as cm
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from scipy.stats import median_abs_deviation, gaussian_kde
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-from itertools import cycle
+from scipy.stats import gaussian_kde, median_abs_deviation
 
 from src.methods.fft import FFTPeriodFinder
 from src.methods.gacf import GACFPeriodFinder
 from src.methods.gaussianprocess import GPPeriodFinder
 from src.methods.lombscargle import LombScarglePeriodFinder
 from src.methods.periodfinder import PeriodResult
-from src.plotting.plotting_tools import split_phase, calculate_phase
+from src.plotting.plotting_tools import calculate_phase, split_phase
 
 
 class RoTo:

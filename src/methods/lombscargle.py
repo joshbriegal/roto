@@ -2,6 +2,7 @@ from typing import Optional
 
 import numpy as np
 from astropy.timeseries import LombScargle
+
 from src.methods.periodfinder import PeriodFinder, Periodogram, PeriodResult
 
 

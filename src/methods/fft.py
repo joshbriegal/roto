@@ -2,6 +2,7 @@ from typing import Optional
 
 import numpy as np
 import numpy.fft as fft
+
 from src.methods.periodfinder import PeriodFinder, Periodogram, PeriodResult
 
 

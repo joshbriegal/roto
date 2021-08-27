@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.stats import binned_statistic
 
+
 def split_phase(phase, data, timeseries=None, buff=0.9, nperiods=1):
     """
     returns list of lists of data & phases for complete periods
