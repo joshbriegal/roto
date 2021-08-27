@@ -2,12 +2,12 @@ from os.path import splitext
 from typing import Optional, Tuple
 
 import aesara_theano_fallback.tensor as tt
+import matplotlib.pyplot as plt
 import numpy as np
 import pymc3 as pm
 import pymc3_ext as pmx
-from corner import corner
 from celerite2.theano import GaussianProcess, terms
-import matplotlib.pyplot as plt
+from corner import corner
 
 from src.methods.periodfinder import PeriodFinder, PeriodResult
 
