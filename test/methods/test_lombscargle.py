@@ -63,7 +63,7 @@ def test_call(timeseries, flux, period):
 
     outputted_period = ls()
 
-    # assert outputted_period.period == period  # TODO: Currently fails as LS outputs many aliases - we see sampling as largest peak.
+    assert period * 0.8 <= outputted_period.period <= period * 1.2
     assert outputted_period.method == "LombScarglePeriodFinder"
     assert outputted_period.neg_error == 0
     assert outputted_period.pos_error == 0
