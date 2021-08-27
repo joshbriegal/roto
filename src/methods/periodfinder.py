@@ -178,18 +178,18 @@ class PeriodFinder(ABC):
             self()
 
         ax.semilogx(
-                    np.divide(1.0, self.periodogram.frequency_axis),
-                    self.periodogram.power_axis,
-                    lw=1,
-                )
+            np.divide(1.0, self.periodogram.frequency_axis),
+            self.periodogram.power_axis,
+            lw=1,
+        )
 
         ax.axvline(period.period, color="orange", lw=1)
-        ax.axvspan(period.period - period.neg_error, period.period + period.pos_error, color='orange', alpha=0.5)
+        ax.axvspan(
+            period.period - period.neg_error,
+            period.period + period.pos_error,
+            color="orange",
+            alpha=0.5,
+        )
 
         ax.set_xlabel("Period")
         ax.set_ylabel("Power")
-
-        
-
-        
-

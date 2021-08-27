@@ -84,7 +84,9 @@ class GACFPeriodFinder(PeriodFinder):
             PeriodResult: [description]
         """
 
-        self.lag_timeseries, self.correlations = self.calculate_autocorrelation(**kwargs)
+        self.lag_timeseries, self.correlations = self.calculate_autocorrelation(
+            **kwargs
+        )
         if gacf_method == "fft":
             fft = FFTPeriodFinder(self.lag_timeseries, self.correlations)
             fft_period = fft(**kwargs)
@@ -263,13 +265,15 @@ class GACFPeriodFinder(PeriodFinder):
         ax.scatter(self.lag_timeseries, self.correlations, s=1)
 
         ax.axvline(period.period, color="orange", lw=1)
-        ax.axvspan(period.period - period.neg_error, period.period + period.pos_error, color='orange', alpha=0.5)
+        ax.axvspan(
+            period.period - period.neg_error,
+            period.period + period.pos_error,
+            color="orange",
+            alpha=0.5,
+        )
 
         ax.set_xlim([0, min(5 * period.period, self.lag_timeseries[-1])])
 
         ax.set_xlabel("Lag time")
         ax.set_ylabel("G-ACF Power")
         ax.set_title("G-ACF")
-
-
-

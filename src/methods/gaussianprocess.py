@@ -236,10 +236,8 @@ class GPPeriodFinder(PeriodFinder):
 
             ax.hist(
                 period.period_distribution,
-                histtype='step',
-                bins=np.linspace(
-                    xmin - period.neg_error, xmax + period.pos_error
-                ),
+                histtype="step",
+                bins=np.linspace(xmin - period.neg_error, xmax + period.pos_error),
             )
 
         ax.set_xlim([xmin, xmax])
@@ -268,15 +266,16 @@ class GPPeriodFinder(PeriodFinder):
         Args:
             ax ([type]):  Matplotlib axis
         """
-        model_timeseries = np.linspace(self.timeseries.min()-5, self.timeseries.max()+5, 2000)
+        model_timeseries = np.linspace(
+            self.timeseries.min() - 5, self.timeseries.max() + 5, 2000
+        )
         mu, var = self.gp.predict(self.flux, t=model_timeseries, return_var=True)
         mu += self.solution["mean"]
         std = np.sqrt(var)
 
-        line = ax.fill_between(model_timeseries, mu+std, mu-std, color="orange", alpha=0.3, zorder=1)
+        line = ax.fill_between(
+            model_timeseries, mu + std, mu - std, color="orange", alpha=0.3, zorder=1
+        )
         line.set_edgecolor("none")
 
         ax.plot(model_timeseries, mu, color="orange", zorder=2)
-
-
-

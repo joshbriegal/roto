@@ -207,9 +207,7 @@ class RoTo:
 
         self.plot_data(ax_dict["data"])
         self.plot_periods(ax_dict["distributions"])
-        self.plot_phase_folded_data(
-            ax_dict["phase_fold"], self.best_period().period
-        )
+        self.plot_phase_folded_data(ax_dict["phase_fold"], self.best_period().period)
 
         for method_name, method in self.methods.items():
             if method_name == "gp":

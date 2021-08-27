@@ -23,7 +23,7 @@ if __name__ == "__main__":
         df.flux,
         df.flux_errors,
         # {"lombscargle": {}, "gacf": {}},
-        name="KIC_5110407_LC_with_gaps"
+        name="KIC_5110407_LC_with_gaps",
     )
     roto(gacf_method="peaks", do_mcmc=True, remove_outliers=True)
     print(roto)
