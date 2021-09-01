@@ -1,4 +1,5 @@
 from typing import Optional
+
 import numpy as np
 from matplotlib.figure import Axes, Figure
 from matplotlib.ticker import Formatter, ScalarFormatter

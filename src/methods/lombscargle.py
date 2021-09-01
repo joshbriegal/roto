@@ -2,8 +2,8 @@ from typing import Optional
 
 import numpy as np
 from astropy.timeseries import LombScargle
-
 from matplotlib.axes import Axes
+
 from src.methods.periodfinder import PeriodFinder, Periodogram, PeriodResult
 
 

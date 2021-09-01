@@ -3,8 +3,8 @@ from typing import Optional, Tuple
 import numpy as np
 from astropy.convolution import Gaussian1DKernel, convolve
 from gacf import GACF
-from scipy.stats import median_abs_deviation
 from matplotlib.axes import Axes
+from scipy.stats import median_abs_deviation
 
 from src.methods.fft import FFTPeriodFinder
 from src.methods.periodfinder import PeriodFinder, PeriodResult
