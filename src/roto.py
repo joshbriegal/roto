@@ -1,10 +1,13 @@
 from itertools import cycle
-from typing import List, Optional
+from typing import Dict, List, Optional, Tuple, Union
 
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
+from matplotlib.ticker import ScalarFormatter
 from scipy.stats import gaussian_kde, median_abs_deviation
 
 from src.methods.fft import FFTPeriodFinder
@@ -12,7 +15,11 @@ from src.methods.gacf import GACFPeriodFinder
 from src.methods.gaussianprocess import GPPeriodFinder
 from src.methods.lombscargle import LombScarglePeriodFinder
 from src.methods.periodfinder import PeriodResult
-from src.plotting.plotting_tools import calculate_phase, split_phase
+from src.plotting.plotting_tools import (calculate_phase,
+                                         create_axis_with_formatter,
+                                         split_phase)
+
+DEFAULT_COLOUR_CYCLE = cycle(plt.rcParams["axes.prop_cycle"].by_key()["color"])
 
 
 class RoTo:
@@ -24,13 +31,23 @@ class RoTo:
         "gp": GPPeriodFinder,  # keep at end of dictionary to allow seed period generation from other methods.
     }
 
+    METHOD_NAMES = {
+        "lombscargle": "Lomb-Scargle",
+        "fft": "Fast Fourier Transform",
+        "gacf": "G-ACF",
+        "gp": "Gaussian Process Regression",
+    }
+
+    PLOTTING_COLOURS = {method: next(DEFAULT_COLOUR_CYCLE) for method in METHODS}
+
     def __init__(
         self,
         timeseries: np.ndarray,
         flux: np.ndarray,
         flux_errors: Optional[np.ndarray] = None,
         methods_parameters: Optional[dict] = None,
-        name: Optional[str] = "Unnamed RoTo Object",
+        name: str = "Unnamed RoTo Object",
+        units: str = "days",
     ):
         self.name = name
 
@@ -40,15 +57,24 @@ class RoTo:
 
         timeseries_diffs = np.diff(self.timeseries)
         self.regular_sampling = (timeseries_diffs.max() - timeseries_diffs.min()) < 1e-5
+        self.units = units
+        if self.units != "days":
+            print(
+                "Warning: GP prior scaled to expect data in days. Check prior or convert units."
+            )
 
-        self.methods = self._parse_constructor_parameters(methods_parameters)
+        self.methods = self._parse_constructor_parameters(
+            methods_parameters, self.units
+        )
 
         self.periods = {}
 
-    def _parse_constructor_parameters(self, methods_parameters: Optional[dict]) -> dict:
+    def _parse_constructor_parameters(
+        self, methods_parameters: Optional[dict] = None, units: str = "days"
+    ) -> dict:
         if methods_parameters is None:
             return {
-                name: method(self.timeseries, self.flux, self.flux_errors)
+                name: method(self.timeseries, self.flux, self.flux_errors, units=units)
                 for name, method in self.METHODS.items()
                 if (name != "fft") or (self.regular_sampling)
             }
@@ -60,7 +86,7 @@ class RoTo:
 
         for method, kwargs in methods_parameters.items():
             methods[method] = self.METHODS[method](
-                self.timeseries, self.flux, self.flux_errors, **kwargs
+                self.timeseries, self.flux, self.flux_errors, units=units, **kwargs
             )
 
         return methods
@@ -80,7 +106,12 @@ class RoTo:
 
             self.periods[name] = method(**kwargs)
 
-    def periods_to_table(self):
+    def periods_to_table(self) -> pd.DataFrame:
+        """Convert roto.periods into a DataFrame for display.
+
+        Returns:
+            pd.DataFrame: Dataframe with all outputted periods
+        """
 
         columns = {"period": [], "neg_error": [], "pos_error": [], "method": []}
 
@@ -110,15 +141,15 @@ class RoTo:
         running the period finding methods, will return None.
 
         Args:
-            method (str, optional): [description]. Defaults to "mean".
-            include (Optional[List], optional): [description]. Defaults to [].
-            exclude (Optional[List], optional): [description]. Defaults to [].
+            method (str, optional): method should be one of 'mean', 'median' or a period finding method. Defaults to "mean".
+            include (Optional[List], optional): Method outputs to include. Defaults to [].
+            exclude (Optional[List], optional): Method outputs to exclude. Defaults to [].
 
         Raises:
-            ValueError: [description]
+            ValueError: If method specified incorrect.
 
         Returns:
-            PeriodResult: [description]
+            PeriodResult: CombinedPeriodResult.
         """
         if not self.periods:
             return None
@@ -195,7 +226,26 @@ class RoTo:
         exclude: Optional[List] = None,
         plot_gp: bool = True,
         show: bool = True,
-    ):
+        summary: bool = False,
+        scientific: bool = False,
+        return_fig_ax: bool = False,
+    ) -> Union[None, Tuple[Figure, Dict]]:
+        """Generate summary plot of RoTo object run.
+
+        Args:
+            savefig (bool, optional): Save figure to pdf. Defaults to False.
+            filename (Optional[str], optional): Name of pdf. Defaults to None.
+            include (Optional[List], optional): Methods to include. Defaults to None (all methods).
+            exclude (Optional[List], optional): Methods to exclude. Defaults to None (no methods).
+            plot_gp (bool, optional): Plot Gaussian Process prediction & residuals. Defaults to True.
+            show (bool, optional): Show interactive plot. Defaults to True.
+            summary (bool, optional): Just plot summary, no methods. Defaults to False.
+            scientific (bool, optional): Scientific formatting of numbers vs linear scale. Defaults to False.
+            return_fig_ax (bool, optional): Return figure and axis tuples for further processing. Defaults to False.
+
+        Returns:
+            Union[None, Tuple(Figure, Dict)]: None or a tuple (matplotlib figure, dictionary of matplotlib axes)
+        """
 
         if savefig and not filename:
             filename = f"{self.name}.pdf"
@@ -203,24 +253,40 @@ class RoTo:
         if (not include) or (not self.periods):
             include = list(self.periods.keys())
 
-        fig, ax_dict = self._setup_figure(include=include, exclude=exclude)
+        fig, ax_dict = self._setup_figure(
+            include=include,
+            exclude=exclude,
+            summary=summary,
+            scientific=scientific,
+            plot_gp=plot_gp,
+        )
 
         self.plot_data(ax_dict["data"])
         self.plot_periods(ax_dict["distributions"])
         self.plot_phase_folded_data(ax_dict["phase_fold"], self.best_period().period)
 
-        for method_name, method in self.methods.items():
-            if method_name == "gp":
-                if plot_gp:
-                    method.plot_gp_predictions(ax_dict["data"])
-            method.plot(
-                ax_dict[method_name]["method"],
-                self.periods[method_name],
-            )
-            self.plot_phase_folded_data(
-                ax_dict[method_name]["phase_fold"],
-                self.periods[method_name].period,
-            )
+        if not summary:
+            for method_name, method in self.methods.items():
+                if method_name == "gp":
+                    if plot_gp:
+                        ax_dict["data"].get_xaxis().set_visible(False)
+                        method.plot_gp_predictions(
+                            ax_dict["data"], colour=self.PLOTTING_COLOURS[method_name]
+                        )
+                        method.plot_gp_residuals(
+                            ax_dict["residuals"],
+                            colour=self.PLOTTING_COLOURS[method_name],
+                        )
+
+                method.plot(
+                    ax_dict[method_name]["method"],
+                    self.periods[method_name],
+                    colour=self.PLOTTING_COLOURS[method_name],
+                )
+                self.plot_phase_folded_data(
+                    ax_dict[method_name]["phase_fold"],
+                    self.periods[method_name].period,
+                )
 
         fig.tight_layout()
         if savefig:
@@ -228,10 +294,38 @@ class RoTo:
         if show:
             plt.show()
 
-    def plot_periods(self, ax):
-        colours = cycle(plt.rcParams["axes.prop_cycle"].by_key()["color"])
+        if return_fig_ax:
+            return fig, ax_dict
+
+    def plot_summary(
+        self,
+        savefig: bool = False,
+        filename: Optional[str] = None,
+        plot_gp: bool = True,
+        show: bool = True,
+    ):
+        """Helper function to create just summary plots, same as calling self.plot(summary=True)
+
+        Args:
+            savefig (bool, optional): Save figure to pdf. Defaults to False.
+            filename (Optional[str], optional): Name of pdf. Defaults to None.
+            plot_gp (bool, optional): Plot Gaussian Process prediction & residuals. Defaults to True.
+            show (bool, optional): Show interactive plot. Defaults to True.
+        """
+        self.plot(
+            savefig=savefig, filename=filename, plot_gp=plot_gp, show=show, summary=True
+        )
+
+    def plot_periods(self, ax: Axes) -> Axes:
+        """Plot figure comparing outputted periods and errors.
+
+        Args:
+            ax (Axes): Matplotlib axis
+
+        Returns:
+            Axes: Matplotlib axis
+        """
         for name, period in self.periods.items():
-            color = next(colours)
             if period.period_distribution is not None:
                 # plot as distribution
                 density = gaussian_kde(period.period_distribution)
@@ -240,12 +334,16 @@ class RoTo:
                 xs = np.linspace(pmin, pmax, 100)
                 kde_plot = density(xs)
                 kde_plot *= 1.0 / kde_plot.max()
-                ax.plot(xs, kde_plot, color=color)
-            ax.axvline(period.period, label=name, color=color)
+                ax.plot(xs, kde_plot, color=self.PLOTTING_COLOURS[name])
+            ax.axvline(
+                period.period,
+                label=self.METHOD_NAMES[name],
+                color=self.PLOTTING_COLOURS[name],
+            )
             ax.axvspan(
                 period.period - period.neg_error,
                 period.period + period.pos_error,
-                color=color,
+                color=self.PLOTTING_COLOURS[name],
                 alpha=0.2,
             )
 
@@ -271,11 +369,28 @@ class RoTo:
 
         ax.get_yaxis().set_visible(False)
         ax.set_xlabel("Period")
-        ax.set_title(str(best_period))
+        two_sided_error = np.average([best_period.neg_error, best_period.pos_error])
+        ax.set_title(
+            f"Adopted Period: {best_period.period:.2f} ± {two_sided_error:.2f} {self.units}"
+        )
 
         ax.legend()
 
-    def plot_gp_diagnostics(self, show: bool = True, savefig: bool = False, filename: str = ""):
+        return ax
+
+    def plot_gp_diagnostics(
+        self, show: bool = True, savefig: bool = False, filename: str = ""
+    ):
+        """Plot Gaussian Process diagnostic outputs figures.
+
+        Args:
+            show (bool, optional): Show interactive plot. Defaults to True.
+            savefig (bool, optional): Save figure to pdf. Defaults to False.
+            filename (Optional[str], optional): Name of pdf. Defaults to None.
+
+        Raises:
+            RuntimeError: If no GP found.
+        """
         if "gp" not in self.methods:
             raise RuntimeError("Cannot plot GP diagnostics, no GP method found.")
 
@@ -287,17 +402,39 @@ class RoTo:
         except RuntimeError as trace_err:
             print(trace_err)
         try:
-            self.methods["gp"].plot_distributions(show=show, savefig=savefig, filename=filename)
+            self.methods["gp"].plot_distributions(
+                show=show, savefig=savefig, filename=filename
+            )
         except (RuntimeError, ValueError) as dist_err:
             print(dist_err)
 
+    def plot_data(self, ax: Axes) -> Axes:
+        """Scatter plot of input data.
 
-    def plot_data(self, ax):
-        ax.scatter(self.timeseries, self.flux, s=1)
-        ax.set_xlabel("Time")
+        Args:
+            ax (Axes): Matplotlib axis
+
+        Returns:
+            Axes: Matplotlib axis
+        """
+        ax.scatter(self.timeseries, self.flux, s=1, color="k")
+        ax.set_xlabel(f"Time / {self.units}")
         ax.set_ylabel("Flux")
 
-    def plot_phase_folded_data(self, ax, period: float, epoch: float = 0):
+        return ax
+
+    def plot_phase_folded_data(self, ax: Axes, period: float, epoch: float = 0) -> Axes:
+        """Plot data phase folded on period and epoch.
+        Colour scale incremented for each period.
+
+        Args:
+            ax (Axes): Matplotlib axis
+            period (float): Period on which to phase fold.
+            epoch (float, optional): Epoch on which to phase fold. Defaults to 0.
+
+        Returns:
+            Axes: Matplotlib axis
+        """
         phased_timeseries = calculate_phase(self.timeseries, period, epoch)
         split_phases, split_flux = split_phase(phased_timeseries, self.flux)
         colours = iter(cm.viridis(np.r_[0 : 1 : len(split_phases) * 1j]))
@@ -305,34 +442,51 @@ class RoTo:
         for phase, flux in zip(split_phases, split_flux):
             ax.scatter(phase, flux, color=next(colours), s=1)
 
-        ax.set_title(f"Phase folded on {period:.2f}")
+        ax.set_title(f"Period: {period:.4f} {self.units}")
         ax.set_xlim([0, 1])
         ax.set_xlabel("Phase")
         ax.set_ylabel("Flux")
 
-    def _setup_figure(self, include: Optional[List] = [], exclude: Optional[List] = []):
+        return ax
+
+    def _setup_figure(
+        self,
+        include: Optional[List] = [],
+        exclude: Optional[List] = [],
+        summary: bool = False,
+        scientific: bool = False,
+        plot_gp: bool = False,
+    ):
 
         unit_grid_width = 5
         unit_grid_height = 1
 
-        data_plot_size = (2, 2)  # in units of grid width, height
+        data_plot_size = (2, 3)  # in units of grid width, height
+        residuals_plot_size = (2, 2)
         distributions_plot_size = (1, 3)
         phase_fold_plot_size = (1, 3)
         method_plot_size = (1, 3)
 
-        methods = {name: method for name, method in self.methods.items()}
-        if include:
-            methods = {
-                name: method for name, method in methods.items() if name in include
-            }
-        if exclude:
-            methods = {
-                name: method for name, method in methods.items() if name not in exclude
-            }
+        if summary:
+            # just plot summary stats, no method plots.
+            methods = {}
+        else:
+            methods = {name: method for name, method in self.methods.items()}
+            if include:
+                methods = {
+                    name: method for name, method in methods.items() if name in include
+                }
+            if exclude:
+                methods = {
+                    name: method
+                    for name, method in methods.items()
+                    if name not in exclude
+                }
 
         n_grid_units_width = 2
         n_grid_units_height = (
             data_plot_size[1]
+            + (residuals_plot_size[1] * int(plot_gp))
             + distributions_plot_size[1]
             + method_plot_size[1] * len(methods)
         )
@@ -346,24 +500,34 @@ class RoTo:
         gridspec = fig.add_gridspec(n_grid_units_height, n_grid_units_width)
 
         axes = {}
+        formatter = ScalarFormatter()
+        formatter.set_scientific(scientific)
         height = 0
-        axes["data"] = fig.add_subplot(gridspec[height : height + data_plot_size[1], :])
-        height += data_plot_size[1]
-        axes["distributions"] = fig.add_subplot(
-            gridspec[height : height + distributions_plot_size[1], 0]
+        axes["data"] = create_axis_with_formatter(
+            fig, gridspec[height : height + data_plot_size[1], :], formatter
         )
-        axes["phase_fold"] = fig.add_subplot(
-            gridspec[height : height + phase_fold_plot_size[1], 1]
+        height += data_plot_size[1]
+        if plot_gp:
+            axes["residuals"] = create_axis_with_formatter(
+                fig, gridspec[height : height + residuals_plot_size[1], :], formatter
+            )
+            height += residuals_plot_size[1]
+
+        axes["distributions"] = create_axis_with_formatter(
+            fig, gridspec[height : height + distributions_plot_size[1], 0], formatter
+        )
+        axes["phase_fold"] = create_axis_with_formatter(
+            fig, gridspec[height : height + phase_fold_plot_size[1], 1], formatter
         )
         height += phase_fold_plot_size[1]
 
         for method in methods:
             axes[method] = {
-                "method": fig.add_subplot(
-                    gridspec[height : height + method_plot_size[1], 0]
+                "method": create_axis_with_formatter(
+                    fig, gridspec[height : height + method_plot_size[1], 0], formatter
                 ),
-                "phase_fold": fig.add_subplot(
-                    gridspec[height : height + method_plot_size[1], 1]
+                "phase_fold": create_axis_with_formatter(
+                    fig, gridspec[height : height + method_plot_size[1], 1], formatter
                 ),
             }
             height += method_plot_size[1]

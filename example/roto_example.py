@@ -28,4 +28,4 @@ if __name__ == "__main__":
     roto(gacf_method="peaks", do_mcmc=True, remove_outliers=False)
     print(roto)
     roto.plot(savefig=True, show=False)
-    roto.plot_gp_diagnostics(show=False, savefig=True)
+    # roto.plot_gp_diagnostics(show=False, savefig=True)

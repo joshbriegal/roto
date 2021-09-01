@@ -8,6 +8,7 @@ import pymc3 as pm
 import pymc3_ext as pmx
 from celerite2.theano import GaussianProcess, terms
 from corner import corner
+from matplotlib.axes import Axes
 
 from src.methods.periodfinder import PeriodFinder, PeriodResult
 
@@ -22,6 +23,9 @@ class GPPeriodFinder(PeriodFinder):
         timeseries: np.ndarray,
         flux: np.ndarray,
         flux_errors: Optional[np.ndarray] = None,
+        min_ratio_of_maximum_peak_size: float = 0.2,
+        samples_per_peak: int = 3,
+        units: str = "days",
         gp_seed_period: Optional[float] = None,
     ):
         """
@@ -38,7 +42,7 @@ class GPPeriodFinder(PeriodFinder):
         self.trace: pm.backends.base.MultiTrace = None
 
         self.gp_seed_period = gp_seed_period
-        super().__init__(timeseries, flux, flux_errors)
+        super().__init__(timeseries, flux, flux_errors, min_ratio_of_maximum_peak_size, samples_per_peak, units)
         self.mask = np.ones(len(self.timeseries), dtype=bool)
 
         # convert data into ppt format
@@ -216,7 +220,7 @@ class GPPeriodFinder(PeriodFinder):
 
             return model, map_soln
 
-    def plot(self, ax, period: PeriodResult) -> None:
+    def plot(self, ax, period: PeriodResult, colour: Optional[str] = "orange") -> None:
         """Given a figure and an axis plot the interesting output of the object.
 
         Args:
@@ -239,6 +243,16 @@ class GPPeriodFinder(PeriodFinder):
                 period.period_distribution,
                 histtype="step",
                 bins=np.linspace(xmin - period.neg_error, xmax + period.pos_error),
+                color=colour
+            )
+
+        else:
+            ax.axvline(period.period, color=colour)
+            ax.axvspan(
+                period.period - period.neg_error,
+                period.period + period.pos_error,
+                color=colour,
+                alpha=0.2,
             )
 
         ax.set_xlim([xmin, xmax])
@@ -256,34 +270,60 @@ class GPPeriodFinder(PeriodFinder):
             capsize=10,
         )
 
-        ax.set_xlabel("Period")
+        ax.set_xlabel(f"Period / {self.units}")
         ax.set_yticks([])
         ax.set_ylabel("Period Posterior")
         ax.set_title("Gaussian Process Model")
 
-    def plot_gp_predictions(self, ax) -> None:
-        """Plot GP model predictions.
-
-        Args:
-            ax ([type]):  Matplotlib axis
-        """
-        model_timeseries = np.linspace(
-            self.timeseries.min() - 5, self.timeseries.max() + 5, 2000
-        )
+    def _generate_plotting_predictions(self, timeseries: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        
         mu, var = pmx.eval_in_model(
-            self.gp.predict(self.flux[self.mask], t=model_timeseries, return_var=True),
+            self.gp.predict(self.flux[self.mask], t=timeseries, return_var=True),
             point=self.solution,
             model=self.model,
         )
         mu += self.solution["mean"]
         std = np.sqrt(var)
 
+        return mu, std
+
+    def plot_gp_predictions(self, ax: Axes, colour: Optional[str] = "orange") -> Axes:
+        """Plot GP model predictions.
+
+        Args:
+            ax (Axes):  Matplotlib axis
+        """
+        model_timeseries = np.linspace(
+            self.timeseries.min() - 5, self.timeseries.max() + 5, 2000
+        )
+
+        mu, std = self._generate_plotting_predictions(model_timeseries)
+
         line = ax.fill_between(
-            model_timeseries, mu + std, mu - std, color="orange", alpha=0.3, zorder=1
+            model_timeseries, mu + std, mu - std, color=colour, alpha=0.3, zorder=1
         )
         line.set_edgecolor("none")
 
-        ax.plot(model_timeseries, mu, color="orange", zorder=2)
+        ax.plot(model_timeseries, mu, color=colour, zorder=2)
+
+    def plot_gp_residuals(self, ax: Axes, colour: Optional[str] = "orange") -> Axes:
+        """Plot GP model predictions.
+
+        Args:
+            ax (Axes):  Matplotlib axis
+        """
+
+        mu, std = self._generate_plotting_predictions(self.timeseries)
+
+        residuals = self.flux - mu
+
+        ax.fill_between(self.timeseries, std, -std, color=colour, alpha=0.2)
+        ax.scatter(self.timeseries, residuals, color='k', s=1)
+        ax.set_xlabel(f"Time / {self.units}")
+        ax.set_ylabel("Residuals")
+
+        return ax
+
 
     def plot_trace(self, show: bool = True, savefig: bool = False, filename: str = ""):
         """Plot trace using arviZ plot_trace.

@@ -1,4 +1,7 @@
+from typing import Optional
 import numpy as np
+from matplotlib.figure import Axes, Figure
+from matplotlib.ticker import Formatter, ScalarFormatter
 from scipy.stats import binned_statistic
 
 
@@ -86,3 +89,26 @@ def bin_phase_curve(phase, data, statistic="median", bins=20):
     bin_centers = bin_edges[1:] - bin_width / 2
 
     return bin_centers, bin_medians
+
+
+def create_axis_with_formatter(fig: Figure, gridspec_position, formatter: Optional[Formatter] = None) -> Axes:
+    """Create subplot figure and apply formatter to x/y axis.
+
+    Args:
+        fig (Figure): Matplotlib Figure
+        gridspec_position (gridspec slice): gridspec slice / position.
+        formatter (Optional[Formatter], optional): Matplotlib Ticker Formatter.
+
+    Returns:
+        Axes: [description]
+    """
+    if not formatter:
+        formatter = ScalarFormatter()
+        formatter.set_scientific(False)
+
+    ax = fig.add_subplot(gridspec_position)
+    ax.xaxis.set_major_formatter(formatter)
+    ax.yaxis.set_major_formatter(formatter)
+
+    return ax
+

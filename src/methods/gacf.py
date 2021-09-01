@@ -4,6 +4,7 @@ import numpy as np
 from astropy.convolution import Gaussian1DKernel, convolve
 from gacf import GACF
 from scipy.stats import median_abs_deviation
+from matplotlib.axes import Axes
 
 from src.methods.fft import FFTPeriodFinder
 from src.methods.periodfinder import PeriodFinder, PeriodResult
@@ -19,6 +20,9 @@ class GACFPeriodFinder(PeriodFinder):
         timeseries: np.ndarray,
         flux: np.ndarray,
         flux_errors: Optional[np.ndarray] = None,
+        min_ratio_of_maximum_peak_size: float = 0.2,
+        samples_per_peak: int = 3,
+        units: str = "days"
     ):
         """
         Args:
@@ -26,7 +30,7 @@ class GACFPeriodFinder(PeriodFinder):
             flux (np.ndarray): array like flux values
             flux_errors (Optional[np.ndarray], optional): array like errors on flux values. Defaults to None.
         """
-        super().__init__(timeseries, flux, flux_errors)
+        super().__init__(timeseries, flux, flux_errors, min_ratio_of_maximum_peak_size, samples_per_peak, units)
         self._gacf = GACF(self.timeseries, self.flux, self.flux_errors)
         self.lag_timeseries = None
         self.correlations = None
@@ -252,28 +256,30 @@ class GACFPeriodFinder(PeriodFinder):
             method=self.__class__.__name__,
         )
 
-    def plot(self, ax, period: PeriodResult) -> None:
+    def plot(self, ax: Axes, period: PeriodResult, colour: Optional[str] = "orange") -> Axes:
         """Given a figure and an axis plot the interesting output of the object.
 
         Args:
-            ax ([type]): Matplotlib axis
+            ax (Axes): Matplotlib axis
             period (PeriodResult): Outputted period to plot around
         """
         if (self.lag_timeseries is None) or (self.correlations is None):
             self()
 
-        ax.scatter(self.lag_timeseries, self.correlations, s=1)
+        ax.scatter(self.lag_timeseries, self.correlations, s=1, color=colour)
 
-        ax.axvline(period.period, color="orange", lw=1)
+        ax.axvline(period.period, color='k', lw=1)
         ax.axvspan(
             period.period - period.neg_error,
             period.period + period.pos_error,
-            color="orange",
+            color='k',
             alpha=0.5,
         )
 
         ax.set_xlim([0, min(5 * period.period, self.lag_timeseries[-1])])
 
-        ax.set_xlabel("Lag time")
+        ax.set_xlabel(f"Lag time / {self.units}")
         ax.set_ylabel("G-ACF Power")
         ax.set_title("G-ACF")
+
+        return ax
