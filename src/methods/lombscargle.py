@@ -35,7 +35,14 @@ class LombScarglePeriodFinder(PeriodFinder):
             nterms (Optional[bool], optional): [description]. Defaults to None.
             normalization (Optional[bool], optional): [description]. Defaults to None.
         """
-        super().__init__(timeseries, flux, flux_errors, min_ratio_of_maximum_peak_size, samples_per_peak, units)
+        super().__init__(
+            timeseries,
+            flux,
+            flux_errors,
+            min_ratio_of_maximum_peak_size,
+            samples_per_peak,
+            units,
+        )
 
         self._lombscargle = LombScargle(
             self.timeseries,
@@ -88,7 +95,9 @@ class LombScarglePeriodFinder(PeriodFinder):
             )
         )
 
-    def plot(self, ax: Axes, period: PeriodResult, colour: Optional[str] = "orange") -> Axes:
+    def plot(
+        self, ax: Axes, period: PeriodResult, colour: Optional[str] = "orange"
+    ) -> Axes:
         """Given a figure and an axis plot the interesting output of the object.
 
         Args:

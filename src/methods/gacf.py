@@ -22,7 +22,7 @@ class GACFPeriodFinder(PeriodFinder):
         flux_errors: Optional[np.ndarray] = None,
         min_ratio_of_maximum_peak_size: float = 0.2,
         samples_per_peak: int = 3,
-        units: str = "days"
+        units: str = "days",
     ):
         """
         Args:
@@ -30,7 +30,14 @@ class GACFPeriodFinder(PeriodFinder):
             flux (np.ndarray): array like flux values
             flux_errors (Optional[np.ndarray], optional): array like errors on flux values. Defaults to None.
         """
-        super().__init__(timeseries, flux, flux_errors, min_ratio_of_maximum_peak_size, samples_per_peak, units)
+        super().__init__(
+            timeseries,
+            flux,
+            flux_errors,
+            min_ratio_of_maximum_peak_size,
+            samples_per_peak,
+            units,
+        )
         self._gacf = GACF(self.timeseries, self.flux, self.flux_errors)
         self.lag_timeseries = None
         self.correlations = None
@@ -256,7 +263,9 @@ class GACFPeriodFinder(PeriodFinder):
             method=self.__class__.__name__,
         )
 
-    def plot(self, ax: Axes, period: PeriodResult, colour: Optional[str] = "orange") -> Axes:
+    def plot(
+        self, ax: Axes, period: PeriodResult, colour: Optional[str] = "orange"
+    ) -> Axes:
         """Given a figure and an axis plot the interesting output of the object.
 
         Args:
@@ -268,11 +277,11 @@ class GACFPeriodFinder(PeriodFinder):
 
         ax.scatter(self.lag_timeseries, self.correlations, s=1, color=colour)
 
-        ax.axvline(period.period, color='k', lw=1)
+        ax.axvline(period.period, color="k", lw=1)
         ax.axvspan(
             period.period - period.neg_error,
             period.period + period.pos_error,
-            color='k',
+            color="k",
             alpha=0.5,
         )
 

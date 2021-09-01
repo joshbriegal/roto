@@ -92,7 +92,9 @@ def bin_phase_curve(phase, data, statistic="median", bins=20):
     return bin_centers, bin_medians
 
 
-def create_axis_with_formatter(fig: Figure, gridspec_position, formatter: Optional[Formatter] = None) -> Axes:
+def create_axis_with_formatter(
+    fig: Figure, gridspec_position, formatter: Optional[Formatter] = None
+) -> Axes:
     """Create subplot figure and apply formatter to x/y axis.
 
     Args:
@@ -112,4 +114,3 @@ def create_axis_with_formatter(fig: Figure, gridspec_position, formatter: Option
     ax.yaxis.set_major_formatter(formatter)
 
     return ax
-

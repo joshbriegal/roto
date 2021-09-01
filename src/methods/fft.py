@@ -53,7 +53,9 @@ class FFTPeriodFinder(PeriodFinder):
 
         return Periodogram(frequency_axis=freqs, power_axis=real_ft)
 
-    def plot(self, ax: Axes, period: PeriodResult, colour: Optional[str] = "orange") -> Axes:
+    def plot(
+        self, ax: Axes, period: PeriodResult, colour: Optional[str] = "orange"
+    ) -> Axes:
         """Given a figure and an axis plot the interesting output of the object.
 
         Args:

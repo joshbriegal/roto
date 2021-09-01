@@ -42,7 +42,14 @@ class GPPeriodFinder(PeriodFinder):
         self.trace: pm.backends.base.MultiTrace = None
 
         self.gp_seed_period = gp_seed_period
-        super().__init__(timeseries, flux, flux_errors, min_ratio_of_maximum_peak_size, samples_per_peak, units)
+        super().__init__(
+            timeseries,
+            flux,
+            flux_errors,
+            min_ratio_of_maximum_peak_size,
+            samples_per_peak,
+            units,
+        )
         self.mask = np.ones(len(self.timeseries), dtype=bool)
 
         # convert data into ppt format
@@ -243,7 +250,7 @@ class GPPeriodFinder(PeriodFinder):
                 period.period_distribution,
                 histtype="step",
                 bins=np.linspace(xmin - period.neg_error, xmax + period.pos_error),
-                color=colour
+                color=colour,
             )
 
         else:
@@ -275,8 +282,10 @@ class GPPeriodFinder(PeriodFinder):
         ax.set_ylabel("Period Posterior")
         ax.set_title("Gaussian Process Model")
 
-    def _generate_plotting_predictions(self, timeseries: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        
+    def _generate_plotting_predictions(
+        self, timeseries: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+
         mu, var = pmx.eval_in_model(
             self.gp.predict(self.flux[self.mask], t=timeseries, return_var=True),
             point=self.solution,
@@ -318,12 +327,11 @@ class GPPeriodFinder(PeriodFinder):
         residuals = self.flux - mu
 
         ax.fill_between(self.timeseries, std, -std, color=colour, alpha=0.2)
-        ax.scatter(self.timeseries, residuals, color='k', s=1)
+        ax.scatter(self.timeseries, residuals, color="k", s=1)
         ax.set_xlabel(f"Time / {self.units}")
         ax.set_ylabel("Residuals")
 
         return ax
-
 
     def plot_trace(self, show: bool = True, savefig: bool = False, filename: str = ""):
         """Plot trace using arviZ plot_trace.
