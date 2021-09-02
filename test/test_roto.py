@@ -1,5 +1,6 @@
 import sys
-with open('/tmp/python-sys-path.txt', 'w') as outfile:
+
+with open("/tmp/python-sys-path.txt", "w") as outfile:
     outfile.write(str(sys.path))
 
 from unittest import mock

@@ -93,7 +93,7 @@ class PeriodResult:
                 and (self.pos_error == other.pos_error)
                 and np.array_equal(self.period_distribution, other.period_distribution)
             )
-        
+
         return False
 
 
