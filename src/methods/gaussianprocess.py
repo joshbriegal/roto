@@ -1,3 +1,4 @@
+from math import ceil
 from os.path import splitext
 from typing import Optional, Tuple
 
@@ -9,7 +10,6 @@ import pymc3_ext as pmx
 from celerite2.theano import GaussianProcess, terms
 from corner import corner
 from matplotlib.axes import Axes
-from math import ceil
 
 from src.methods.periodfinder import PeriodFinder, PeriodResult
 
