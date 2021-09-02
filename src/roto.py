@@ -15,11 +15,9 @@ from src.methods.gacf import GACFPeriodFinder
 from src.methods.gaussianprocess import GPPeriodFinder
 from src.methods.lombscargle import LombScarglePeriodFinder
 from src.methods.periodfinder import PeriodResult
-from src.plotting.plotting_tools import (
-    calculate_phase,
-    create_axis_with_formatter,
-    split_phase,
-)
+from src.plotting.plotting_tools import (calculate_phase,
+                                         create_axis_with_formatter,
+                                         split_phase)
 
 DEFAULT_COLOUR_CYCLE = cycle(plt.rcParams["axes.prop_cycle"].by_key()["color"])
 
