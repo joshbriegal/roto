@@ -22,7 +22,8 @@ class GACFPeriodFinder(PeriodFinder):
         flux_errors: Optional[np.ndarray] = None,
         min_ratio_of_maximum_peak_size: float = 0.2,
         samples_per_peak: int = 3,
-        units: str = "days",
+        time_units: str = "days",
+        flux_units: str = "relative flux units",
     ):
         """
         Args:
@@ -36,7 +37,8 @@ class GACFPeriodFinder(PeriodFinder):
             flux_errors,
             min_ratio_of_maximum_peak_size,
             samples_per_peak,
-            units,
+            time_units,
+            flux_units,
         )
         self._gacf = GACF(self.timeseries, self.flux, self.flux_errors)
         self.lag_timeseries = None
@@ -54,9 +56,9 @@ class GACFPeriodFinder(PeriodFinder):
         It is recommended to leave selection_function and weight_function as default for speed.
 
         Args:
-            min_lag (float, optional): min lag in units of time. Defaults to None.
-            max_lag (float, optional): max lag in units of time. Defaults to None.
-            lag_resolution (float, optional): lag resolution in units of time. Defaults to None.
+            min_lag (float, optional): min lag in time_units. Defaults to None.
+            max_lag (float, optional): max lag in time_units. Defaults to None.
+            lag_resolution (float, optional): lag resolution in time_units. Defaults to None.
             alpha (float, optional): weight function characteristic length scale, default is t.median_time. Defaults to None.
             selection_function (str, optional): 'fast' or 'natural' - see paper for more details. Defaults to "natural".
             weight_function: (str, optional) 'gaussian' or 'fractional' see paper for more details. Defaults to "fractional".
@@ -287,7 +289,7 @@ class GACFPeriodFinder(PeriodFinder):
 
         ax.set_xlim([0, min(5 * period.period, self.lag_timeseries[-1])])
 
-        ax.set_xlabel(f"Lag time / {self.units}")
+        ax.set_xlabel(f"Lag time / {self.time_units}")
         ax.set_ylabel("G-ACF Power")
         ax.set_title("G-ACF")
 

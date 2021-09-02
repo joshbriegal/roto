@@ -107,7 +107,8 @@ class PeriodFinder(ABC):
         flux_errors: Optional[np.ndarray] = None,
         min_ratio_of_maximum_peak_size: float = 0.2,
         samples_per_peak: int = 3,
-        units: str = "days",
+        time_units: str = "days",
+        flux_units: str = "relative flux units",
     ):
 
         self.timeseries = timeseries
@@ -117,7 +118,8 @@ class PeriodFinder(ABC):
         self.min_ratio_of_maximum_peak_size = min_ratio_of_maximum_peak_size
         self.samples_per_peak = samples_per_peak
 
-        self.units = units
+        self.time_units = time_units
+        self.flux_units = flux_units
 
         self.periodogram = None
 
@@ -222,7 +224,7 @@ class PeriodFinder(ABC):
             ]
         )
 
-        ax.set_xlabel(f"Period / {self.units}")
+        ax.set_xlabel(f"Period / {self.time_units}")
         ax.set_ylabel("Power")
 
         return ax

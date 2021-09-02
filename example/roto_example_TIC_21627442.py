@@ -21,12 +21,15 @@ if __name__ == "__main__":
         timeseries,
         flux,
         flux_errors,
-        methods_parameters={
-            "lombscargle": {},
-            "fft": {},
-            "gacf": {},
-            "gp": {"gp_seed_period": 3.853},
-        },
+        name="TIC_21627442_2min_LC_sector_6.dat",
+        # methods_parameters={
+        #     "lombscargle": {},
+        #     "fft": {},
+        #     "gacf": {},
+        #     "gp": {"gp_seed_period": 3.853},
+        # },
     )
-    roto()
+    roto(gacf_method="peaks", do_mcmc=False, remove_outliers=False)
     print(roto)
+    roto.plot(plot_gp=True, savefig=True, show=False)
+    # roto.plot_gp_diagnostics(show=False, savefig=True)
