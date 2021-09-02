@@ -48,7 +48,7 @@ class PeriodResult:
     period_distribution: Optional[np.ndarray] = None
 
     def __repr__(self):
-        return f"[{self.period:.4f}+{self.pos_error:.4f}-{self.neg_error:.4f} ({self.method})]"
+        return f"{self.period:.4f}+{self.pos_error:.4f}-{self.neg_error:.4f} ({self.method})"
 
     def __add__(self, other: "PeriodResult"):
         """Add together two PeriodResult objects.
@@ -84,6 +84,17 @@ class PeriodResult:
             pos_error=(relative_pos_error * new_period),
             method="CombinedPeriodResult",
         )
+
+    def __eq__(self, other: "PeriodResult"):
+        if isinstance(other, PeriodResult):
+            return (
+                (self.period == other.period)
+                and (self.neg_error == other.neg_error)
+                and (self.pos_error == other.pos_error)
+                and np.array_equal(self.period_distribution, other.period_distribution)
+            )
+        
+        return False
 
 
 class PeriodFinder(ABC):

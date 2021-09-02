@@ -211,10 +211,8 @@ class RoTo:
                 pos_error=std,
                 method="CombinedPeriodResult",
             )
-        elif method in self.METHODS:
-            for periodresult in self.periods:
-                if periodresult.method == self.METHODS[method].__name__:
-                    return periodresult
+        elif method in self.periods:
+            return self.periods[method]
 
         raise ValueError(
             f"Parameter 'method' must be one of ['mean', 'median'] or {list(self.METHODS.keys())}]. Did you specify a period extraction method not run?"

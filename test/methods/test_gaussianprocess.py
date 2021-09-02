@@ -94,7 +94,7 @@ def test_calculate_gp_period_no_mcmc_remove_outliers(
     assert mock_build_model.call_args_list[0] == ()
 
     assert mock_build_model.call_args_list[1][1]["start"] == mock_map_soln
-    assert_equal(mock_build_model.call_args_list[1][1]["mask"], np.ones(10))
+    assert_equal(pf.mask, np.ones(10))
 
     assert period_result == PeriodResult(69.420, 0, 0, "GPPeriodFinder")
 
@@ -143,6 +143,6 @@ def test_calculate_gp_period_mcmc(
     assert_equal(mock_percentile.call_args_list[0][0][0], mock_period_samples["period"])
     assert_equal(mock_percentile.call_args_list[0][0][1], [15.87, 50.0, 84.14])
 
-    assert period_result == PeriodResult(1, 1, 1, "GPPeriodFinder")
+    period_result == PeriodResult(1, 1, 1, "GPPeriodFinder")
 
     assert pf.trace == mock_trace
