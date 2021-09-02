@@ -51,17 +51,19 @@ class GPPeriodFinder(PeriodFinder):
             min_ratio_of_maximum_peak_size,
             samples_per_peak,
             time_units,
-            flux_units
+            flux_units,
         )
         self.mask = np.ones(len(self.timeseries), dtype=bool)
-        self.median_flux = np.nanmedian(self.flux) 
+        self.median_flux = np.nanmedian(self.flux)
 
         # convert data into ppt format if input units correct
-        if self.flux_units == 'relative flux units':
+        if self.flux_units == "relative flux units":
             self.flux_ppt = (self.flux / self.median_flux - 1) * 1.0e3
             self.flux_errors_ppt = (self.flux_errors / self.median_flux) * 1.0e3
         else:
-            print("Warning: Not converting units as cannot handle anything other than relative flux units")
+            print(
+                "Warning: Not converting units as cannot handle anything other than relative flux units"
+            )
             self.flux_ppt = self.flux
             self.flux_errors_ppt = self.flux_errors
 
@@ -302,14 +304,16 @@ class GPPeriodFinder(PeriodFinder):
         mu += self.solution["mean"]
 
         # convert data from ppt back into rel flux
-        if self.flux_units == 'relative flux units':
+        if self.flux_units == "relative flux units":
             mu_rel = (mu / 1.0e3 + 1) * self.median_flux
             var_rel = (var / 1.0e3) * self.median_flux
         else:
-            print("Warning: Not converting units as cannot handle anything other than relative flux units")
+            print(
+                "Warning: Not converting units as cannot handle anything other than relative flux units"
+            )
             mu_rel = mu
             var_rel = var
-        
+
         std_rel = np.sqrt(var_rel)
 
         return mu_rel, std_rel
@@ -333,7 +337,12 @@ class GPPeriodFinder(PeriodFinder):
 
         ax.plot(model_timeseries, mu, color=colour, zorder=2)
 
-    def plot_gp_residuals(self, ax: Axes, colour: Optional[str] = "orange", max_number_of_points: float = 2000) -> Axes:
+    def plot_gp_residuals(
+        self,
+        ax: Axes,
+        colour: Optional[str] = "orange",
+        max_number_of_points: float = 2000,
+    ) -> Axes:
         """Plot GP model predictions.
 
         Args:
@@ -343,8 +352,8 @@ class GPPeriodFinder(PeriodFinder):
         if len(self.timeseries) > max_number_of_points:
             # downsample for plotting
             n_times_over = len(self.timeseries) / max_number_of_points
-            plotting_timeseries = self.timeseries[::ceil(n_times_over)]
-            plotting_flux = self.flux[::ceil(n_times_over)]
+            plotting_timeseries = self.timeseries[:: ceil(n_times_over)]
+            plotting_flux = self.flux[:: ceil(n_times_over)]
         else:
             plotting_timeseries = self.timeseries
             plotting_flux = self.flux

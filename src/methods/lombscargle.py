@@ -43,7 +43,7 @@ class LombScarglePeriodFinder(PeriodFinder):
             min_ratio_of_maximum_peak_size,
             samples_per_peak,
             time_units,
-            flux_units
+            flux_units,
         )
 
         self._lombscargle = LombScargle(
