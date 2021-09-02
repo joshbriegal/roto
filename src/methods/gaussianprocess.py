@@ -1,10 +1,14 @@
+from os.path import splitext
 from typing import Optional, Tuple
 
 import aesara_theano_fallback.tensor as tt
+import matplotlib.pyplot as plt
 import numpy as np
 import pymc3 as pm
 import pymc3_ext as pmx
 from celerite2.theano import GaussianProcess, terms
+from corner import corner
+from matplotlib.axes import Axes
 
 from src.methods.periodfinder import PeriodFinder, PeriodResult
 
@@ -19,6 +23,9 @@ class GPPeriodFinder(PeriodFinder):
         timeseries: np.ndarray,
         flux: np.ndarray,
         flux_errors: Optional[np.ndarray] = None,
+        min_ratio_of_maximum_peak_size: float = 0.2,
+        samples_per_peak: int = 3,
+        units: str = "days",
         gp_seed_period: Optional[float] = None,
     ):
         """
@@ -31,10 +38,19 @@ class GPPeriodFinder(PeriodFinder):
 
         self.model: pm.model = None
         self.solution: pm.Point = None
+        self.gp: GaussianProcess = None
         self.trace: pm.backends.base.MultiTrace = None
 
         self.gp_seed_period = gp_seed_period
-        super().__init__(timeseries, flux, flux_errors)
+        super().__init__(
+            timeseries,
+            flux,
+            flux_errors,
+            min_ratio_of_maximum_peak_size,
+            samples_per_peak,
+            units,
+        )
+        self.mask = np.ones(len(self.timeseries), dtype=bool)
 
         # convert data into ppt format
         fmed = np.nanmedian(self.flux)
@@ -93,8 +109,8 @@ class GPPeriodFinder(PeriodFinder):
         if remove_outliers:
             residuals = self.flux_ppt - map_soln["pred"]
             rms = np.sqrt(np.nanmedian(residuals ** 2))
-            mask = np.abs(residuals) < rms_sigma * rms
-            model, map_soln = self.build_model(mask=mask, start=map_soln)
+            self.mask = np.abs(residuals) < rms_sigma * rms
+            model, map_soln = self.build_model(start=map_soln)
 
         # (optionally) run MCMC to sample from posterior
         if do_mcmc and model:
@@ -124,6 +140,7 @@ class GPPeriodFinder(PeriodFinder):
                 neg_error=sigma_n,
                 pos_error=sigma_p,
                 method=self.__class__.__name__,
+                period_distribution=period_samples,
             )
 
         return PeriodResult(
@@ -134,20 +151,17 @@ class GPPeriodFinder(PeriodFinder):
         )
 
     def build_model(
-        self, mask: Optional[np.ndarray] = None, start: Optional[pm.Point] = None
+        self, start: Optional[pm.Point] = None
     ) -> Tuple[pm.Model, pm.Point]:
         """Build a stellar variability Gaussian Process Model.
         Optimise starting point by finding maximum a posteriori parameters.
 
         Args:
-            mask (np.ndarray, optional): Masking array to apply to timeseries. Defaults to None (unmasked).
             start (pymc3 Point, optional): Starting point for initial solution. Defaults to None (model.test_point).
 
         Returns:
             Tuple[pm.Model, pm.Point]: Tuple containing the model and an optimised starting point.
         """
-        if mask is None:
-            mask = np.ones(len(self.timeseries), dtype=bool)
 
         with pm.Model() as model:
             mean = pm.Normal("mean", mu=0.0, sigma=10.0)
@@ -155,7 +169,7 @@ class GPPeriodFinder(PeriodFinder):
             # White noise jitter term
             log_jitter = pm.Normal(
                 "log_jitter",
-                mu=np.log(np.nanmean(self.flux_errors_ppt[mask])),
+                mu=np.log(np.nanmean(self.flux_errors_ppt[self.mask])),
                 sigma=2.0,
             )
 
@@ -190,24 +204,184 @@ class GPPeriodFinder(PeriodFinder):
             )
             gp = GaussianProcess(
                 kernel,
-                t=self.timeseries[mask],
-                diag=tt.add(self.flux_ppt[mask] ** 2, tt.exp(2 * log_jitter)),
+                t=self.timeseries[self.mask],
+                diag=tt.add(self.flux_ppt[self.mask] ** 2, tt.exp(2 * log_jitter)),
                 mean=mean,
                 quiet=True,
             )
 
             # Compute the GP likelihood and add it into the PyMC3 model as a "potential"
-            gp.marginal("gp", observed=self.flux_ppt[mask])
+            gp.marginal("gp", observed=self.flux_ppt[self.mask])
 
             # Compute the mean model prediction for plotting purposes
-            pm.Deterministic("pred", gp.predict(self.flux_ppt[mask]))
+            pm.Deterministic("pred", gp.predict(self.flux_ppt[self.mask]))
 
             # Optimize to find the maximum a posteriori parameters
             if start is None:
                 start = model.test_point
             map_soln = pmx.optimize(start=start)
 
+            self.gp = gp
             self.model = model
             self.solution = map_soln
 
             return model, map_soln
+
+    def plot(self, ax, period: PeriodResult, colour: Optional[str] = "orange") -> None:
+        """Given a figure and an axis plot the interesting output of the object.
+
+        Args:
+            ax ([type]): Matplotlib axis
+            period (PeriodResult): Outputted period to plot around
+        """
+        nperiods = 10
+        xmin = 0
+        xmax = 1
+
+        if period.period_distribution is not None:
+            xmin = period.period - 5 * period.neg_error
+            xmax = min(
+                period.period + 5 * period.pos_error, max(period.period_distribution)
+            )
+
+            bin_size = (period.neg_error + period.pos_error) / 5
+
+            ax.hist(
+                period.period_distribution,
+                histtype="step",
+                bins=np.linspace(xmin - period.neg_error, xmax + period.pos_error),
+                color=colour,
+            )
+
+        else:
+            ax.axvline(period.period, color=colour)
+            ax.axvspan(
+                period.period - period.neg_error,
+                period.period + period.pos_error,
+                color=colour,
+                alpha=0.2,
+            )
+
+        ax.set_xlim([xmin, xmax])
+        ax2 = ax.twinx()
+        ax2.set_ylim([0, 1])
+        ax2.get_yaxis().set_visible(False)
+
+        ax2.errorbar(
+            period.period,
+            0.5,
+            xerr=[[period.neg_error], [period.pos_error]],
+            ms=10,
+            marker="s",
+            c="k",
+            capsize=10,
+        )
+
+        ax.set_xlabel(f"Period / {self.units}")
+        ax.set_yticks([])
+        ax.set_ylabel("Period Posterior")
+        ax.set_title("Gaussian Process Model")
+
+    def _generate_plotting_predictions(
+        self, timeseries: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+
+        mu, var = pmx.eval_in_model(
+            self.gp.predict(self.flux[self.mask], t=timeseries, return_var=True),
+            point=self.solution,
+            model=self.model,
+        )
+        mu += self.solution["mean"]
+        std = np.sqrt(var)
+
+        return mu, std
+
+    def plot_gp_predictions(self, ax: Axes, colour: Optional[str] = "orange") -> Axes:
+        """Plot GP model predictions.
+
+        Args:
+            ax (Axes):  Matplotlib axis
+        """
+        model_timeseries = np.linspace(
+            self.timeseries.min() - 5, self.timeseries.max() + 5, 2000
+        )
+
+        mu, std = self._generate_plotting_predictions(model_timeseries)
+
+        line = ax.fill_between(
+            model_timeseries, mu + std, mu - std, color=colour, alpha=0.3, zorder=1
+        )
+        line.set_edgecolor("none")
+
+        ax.plot(model_timeseries, mu, color=colour, zorder=2)
+
+    def plot_gp_residuals(self, ax: Axes, colour: Optional[str] = "orange") -> Axes:
+        """Plot GP model predictions.
+
+        Args:
+            ax (Axes):  Matplotlib axis
+        """
+
+        mu, std = self._generate_plotting_predictions(self.timeseries)
+
+        residuals = self.flux - mu
+
+        ax.fill_between(self.timeseries, std, -std, color=colour, alpha=0.2)
+        ax.scatter(self.timeseries, residuals, color="k", s=1)
+        ax.set_xlabel(f"Time / {self.units}")
+        ax.set_ylabel("Residuals")
+
+        return ax
+
+    def plot_trace(self, show: bool = True, savefig: bool = False, filename: str = ""):
+        """Plot trace using arviZ plot_trace.
+
+        Args:
+            show (bool, optional): Show using e.g. interactive backend. Defaults to True.
+            savefig (bool, optional): Save figure. Defaults to False.
+            filename (str, optional): Filename to save figure. Defaults to "" (saves as '_trace.pdf')
+
+        Raises:
+            RuntimeError: If no trace, will raise RuntimeError
+        """
+
+        if self.trace:
+            pm.traceplot(self.trace, show=show)
+
+            if savefig:
+                plt.savefig(splitext(filename)[0] + "_trace.pdf")
+        else:
+            raise RuntimeError("Cannot plot trace as no trace generated")
+
+    def plot_distributions(
+        self, show: bool = True, savefig: bool = False, filename: str = ""
+    ):
+        """Plot outputted parameter distributions corner plot.
+
+        Args:
+            show (bool, optional): Show using e.g. interactive backend. Defaults to True.
+            savefig (bool, optional): Save figure. Defaults to False.
+            filename (str, optional): Filename to save figure. Defaults to "" (saves as '_distributions.pdf')
+
+        Raises:
+            RuntimeError: If no solution, will raise RuntimeError
+        """
+        if self.solution:
+
+            names = [
+                k for k in self.solution.keys() if (k[-2:] != "__") and (k != "pred")
+            ]
+
+            fig = corner(
+                self.solution,
+                names=names,
+                quantiles=[0.15865, 0.5, 0.84135],
+                show_titles=True,
+                max_n_ticks=4,
+            )
+            if show:
+                plt.show()
+            if savefig:
+                fig.savefig(splitext(filename)[0] + "_distributions.pdf")
+        else:
+            raise RuntimeError("Cannot plot distributions as no solution found.")

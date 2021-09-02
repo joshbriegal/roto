@@ -1,3 +1,8 @@
+import sys
+
+with open("/tmp/python-sys-path.txt", "w") as outfile:
+    outfile.write(str(sys.path))
+
 from unittest import mock
 
 import pytest
@@ -90,13 +95,13 @@ def test_best_period(
 
     roto = RoTo(timeseries, flux, flux_errors)
 
-    roto.periods = [
-        PeriodResult(1.0, 0.0, 0.0, "LombScarglePeriodFinder"),
-        PeriodResult(2.0, 0.0, 0.0, "FFTPeriodFinder"),
-        PeriodResult(3.0, 0.0, 0.0, "FFTPeriodFinder"),
-        PeriodResult(4.0, 0.0, 0.0, "GACFPeriodFinder"),
-        PeriodResult(5.0, 0.0, 0.0, "GACFPeriodFinder"),
-    ]
+    roto.periods = {
+        "lombscargle": PeriodResult(1.0, 0.0, 0.0, "LombScarglePeriodFinder"),
+        "fft": PeriodResult(3.0, 0.0, 0.0, "FFTPeriodFinder"),
+        "fft2": PeriodResult(2.0, 0.0, 0.0, "FFTPeriodFinder"),
+        "gacf": PeriodResult(4.0, 0.0, 0.0, "GACFPeriodFinder"),
+        "gp": PeriodResult(5.0, 0.0, 0.0, "GPPeriodFinder"),
+    }
 
     best_period = roto.best_period(method)
 
@@ -120,12 +125,12 @@ def test_best_period_include(
 
     roto = RoTo(timeseries, flux, flux_errors)
 
-    roto.periods = [
-        PeriodResult(1.0, 0.0, 0.0, "LombScarglePeriodFinder"),
-        PeriodResult(3.0, 0.0, 0.0, "FFTPeriodFinder"),
-        PeriodResult(4.0, 0.0, 0.0, "GACFPeriodFinder"),
-        PeriodResult(5.0, 0.0, 0.0, "GPPeriodFinder"),
-    ]
+    roto.periods = {
+        "lombscargle": PeriodResult(1.0, 0.0, 0.0, "LombScarglePeriodFinder"),
+        "fft": PeriodResult(3.0, 0.0, 0.0, "FFTPeriodFinder"),
+        "gacf": PeriodResult(4.0, 0.0, 0.0, "GACFPeriodFinder"),
+        "gp": PeriodResult(5.0, 0.0, 0.0, "GPPeriodFinder"),
+    }
 
     best_period = roto.best_period("mean", include=include)
 
@@ -140,9 +145,9 @@ def test_best_period_include_wrong_type(timeseries, flux, flux_errors):
 
     roto = RoTo(timeseries, flux, flux_errors)
 
-    roto.periods = [
-        PeriodResult(1.0, 0.0, 0.0, "LombScarglePeriodFinder"),
-    ]
+    roto.periods = {
+        "lombscargle": PeriodResult(1.0, 0.0, 0.0, "LombScarglePeriodFinder"),
+    }
 
     with pytest.raises(ValueError) as err:
         roto.best_period("mean", include=["non_existent_method"])
@@ -165,12 +170,12 @@ def test_best_period_exclude(
 
     roto = RoTo(timeseries, flux, flux_errors)
 
-    roto.periods = [
-        PeriodResult(1.0, 0.0, 0.0, "LombScarglePeriodFinder"),
-        PeriodResult(3.0, 0.0, 0.0, "FFTPeriodFinder"),
-        PeriodResult(4.0, 0.0, 0.0, "GACFPeriodFinder"),
-        PeriodResult(5.0, 0.0, 0.0, "GPPeriodFinder"),
-    ]
+    roto.periods = {
+        "lombscargle": PeriodResult(1.0, 0.0, 0.0, "LombScarglePeriodFinder"),
+        "fft": PeriodResult(3.0, 0.0, 0.0, "FFTPeriodFinder"),
+        "gacf": PeriodResult(4.0, 0.0, 0.0, "GACFPeriodFinder"),
+        "gp": PeriodResult(5.0, 0.0, 0.0, "GPPeriodFinder"),
+    }
 
     best_period = roto.best_period("mean", exclude=exclude)
 
@@ -185,9 +190,9 @@ def test_best_period_exclude_wrong_type(timeseries, flux, flux_errors):
 
     roto = RoTo(timeseries, flux, flux_errors)
 
-    roto.periods = [
-        PeriodResult(1.0, 0.0, 0.0, "LombScarglePeriodFinder"),
-    ]
+    roto.periods = {
+        "lombscargle": PeriodResult(1.0, 0.0, 0.0, "LombScarglePeriodFinder"),
+    }
 
     with pytest.raises(ValueError) as err:
         roto.best_period("mean", exclude=["non_existent_method"])
@@ -197,9 +202,9 @@ def test_best_period_include_exclude_incompatible(timeseries, flux, flux_errors)
 
     roto = RoTo(timeseries, flux, flux_errors)
 
-    roto.periods = [
-        PeriodResult(1.0, 0.0, 0.0, "LombScarglePeriodFinder"),
-    ]
+    roto.periods = {
+        "lombscargle": PeriodResult(1.0, 0.0, 0.0, "LombScarglePeriodFinder"),
+    }
 
     with pytest.raises(ValueError) as err:
         roto.best_period("mean", exclude=["lombscargle"], include=["lombscargle"])

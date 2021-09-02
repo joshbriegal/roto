@@ -22,6 +22,10 @@ if __name__ == "__main__":
         df.timeseries,
         df.flux,
         df.flux_errors,
+        # {"lombscargle": {}, "gacf": {}},
+        name="KIC_5110407_LC_with_gaps",
     )
-    roto(gacf_method="peaks", do_mcmc=True, remove_outliers=True)
+    roto(gacf_method="peaks", do_mcmc=True, remove_outliers=False)
     print(roto)
+    roto.plot(savefig=True, show=False)
+    # roto.plot_gp_diagnostics(show=False, savefig=True)

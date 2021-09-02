@@ -2,28 +2,15 @@ from typing import Optional
 
 import numpy as np
 import numpy.fft as fft
+from matplotlib.axes import Axes
 
-from src.methods.periodfinder import PeriodFinder, Periodogram
+from src.methods.periodfinder import PeriodFinder, Periodogram, PeriodResult
 
 
 class FFTPeriodFinder(PeriodFinder):
     """Fast Fourier Transform (FFT) method to find periods.
     Conforms to PeriodFinder interface.
     """
-
-    def __init__(
-        self,
-        timeseries: np.ndarray,
-        flux: np.ndarray,
-        flux_errors: Optional[np.ndarray] = None,
-    ):
-        """
-        Args:
-            timeseries (np.ndarray): array like time series.
-            flux (np.ndarray): array like flux values
-            flux_errors (Optional[np.ndarray], optional): array like errors on flux values. Defaults to None.
-        """
-        super().__init__(timeseries, flux, flux_errors)
 
     def calculate_periodogram(self, **kwargs) -> Periodogram:
         """Calculates FFT Periodogram of data
@@ -65,3 +52,16 @@ class FFTPeriodFinder(PeriodFinder):
         freqs = fft.rfftfreq(len_ft, self.timeseries[1] - self.timeseries[0])
 
         return Periodogram(frequency_axis=freqs, power_axis=real_ft)
+
+    def plot(
+        self, ax: Axes, period: PeriodResult, colour: Optional[str] = "orange"
+    ) -> Axes:
+        """Given a figure and an axis plot the interesting output of the object.
+
+        Args:
+            ax ([type]): Matplotlib axis
+            period (PeriodResult): Outputted period to plot around
+        """
+        ax = self.plot_periodogram(ax, period, colour=colour)
+        ax.set_title("FFT Periodogram")
+        return ax

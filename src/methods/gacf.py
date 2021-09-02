@@ -3,6 +3,7 @@ from typing import Optional, Tuple
 import numpy as np
 from astropy.convolution import Gaussian1DKernel, convolve
 from gacf import GACF
+from matplotlib.axes import Axes
 from scipy.stats import median_abs_deviation
 
 from src.methods.fft import FFTPeriodFinder
@@ -19,6 +20,9 @@ class GACFPeriodFinder(PeriodFinder):
         timeseries: np.ndarray,
         flux: np.ndarray,
         flux_errors: Optional[np.ndarray] = None,
+        min_ratio_of_maximum_peak_size: float = 0.2,
+        samples_per_peak: int = 3,
+        units: str = "days",
     ):
         """
         Args:
@@ -26,8 +30,17 @@ class GACFPeriodFinder(PeriodFinder):
             flux (np.ndarray): array like flux values
             flux_errors (Optional[np.ndarray], optional): array like errors on flux values. Defaults to None.
         """
-        super().__init__(timeseries, flux, flux_errors)
+        super().__init__(
+            timeseries,
+            flux,
+            flux_errors,
+            min_ratio_of_maximum_peak_size,
+            samples_per_peak,
+            units,
+        )
         self._gacf = GACF(self.timeseries, self.flux, self.flux_errors)
+        self.lag_timeseries = None
+        self.correlations = None
 
     def calculate_periodogram(self, **kwargs) -> None:
         """A "periodogram" does not exist for an ACF
@@ -82,9 +95,11 @@ class GACFPeriodFinder(PeriodFinder):
             PeriodResult: [description]
         """
 
-        lag_timeseries, correlations = self.calculate_autocorrelation(**kwargs)
+        self.lag_timeseries, self.correlations = self.calculate_autocorrelation(
+            **kwargs
+        )
         if gacf_method == "fft":
-            fft = FFTPeriodFinder(lag_timeseries, correlations)
+            fft = FFTPeriodFinder(self.lag_timeseries, self.correlations)
             fft_period = fft(**kwargs)
             return PeriodResult(
                 period=fft_period.period,
@@ -93,7 +108,7 @@ class GACFPeriodFinder(PeriodFinder):
                 method=self.__class__.__name__,
             )
         elif gacf_method == "peaks":
-            return self.find_acf_peaks(lag_timeseries, correlations)
+            return self.find_acf_peaks(self.lag_timeseries, self.correlations)
 
     def find_acf_peaks(
         self, lag_timeseries: np.ndarray, correlation: np.ndarray
@@ -247,3 +262,33 @@ class GACFPeriodFinder(PeriodFinder):
             pos_error=sigma_p,
             method=self.__class__.__name__,
         )
+
+    def plot(
+        self, ax: Axes, period: PeriodResult, colour: Optional[str] = "orange"
+    ) -> Axes:
+        """Given a figure and an axis plot the interesting output of the object.
+
+        Args:
+            ax (Axes): Matplotlib axis
+            period (PeriodResult): Outputted period to plot around
+        """
+        if (self.lag_timeseries is None) or (self.correlations is None):
+            self()
+
+        ax.scatter(self.lag_timeseries, self.correlations, s=1, color=colour)
+
+        ax.axvline(period.period, color="k", lw=1)
+        ax.axvspan(
+            period.period - period.neg_error,
+            period.period + period.pos_error,
+            color="k",
+            alpha=0.5,
+        )
+
+        ax.set_xlim([0, min(5 * period.period, self.lag_timeseries[-1])])
+
+        ax.set_xlabel(f"Lag time / {self.units}")
+        ax.set_ylabel("G-ACF Power")
+        ax.set_title("G-ACF")
+
+        return ax

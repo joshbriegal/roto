@@ -1,9 +1,10 @@
-from typing import Optional, Tuple
+from typing import Optional
 
 import numpy as np
 from astropy.timeseries import LombScargle
+from matplotlib.axes import Axes
 
-from src.methods.periodfinder import PeriodFinder, Periodogram
+from src.methods.periodfinder import PeriodFinder, Periodogram, PeriodResult
 
 
 class LombScarglePeriodFinder(PeriodFinder):
@@ -16,6 +17,9 @@ class LombScarglePeriodFinder(PeriodFinder):
         timeseries: np.ndarray,
         flux: np.ndarray,
         flux_errors: Optional[np.ndarray] = None,
+        min_ratio_of_maximum_peak_size: float = 0.2,
+        samples_per_peak: int = 3,
+        units: str = "days",
         fit_mean: Optional[bool] = True,
         center_data: Optional[bool] = True,
         nterms: Optional[bool] = 1,
@@ -31,7 +35,14 @@ class LombScarglePeriodFinder(PeriodFinder):
             nterms (Optional[bool], optional): [description]. Defaults to None.
             normalization (Optional[bool], optional): [description]. Defaults to None.
         """
-        super().__init__(timeseries, flux, flux_errors)
+        super().__init__(
+            timeseries,
+            flux,
+            flux_errors,
+            min_ratio_of_maximum_peak_size,
+            samples_per_peak,
+            units,
+        )
 
         self._lombscargle = LombScargle(
             self.timeseries,
@@ -83,3 +94,16 @@ class LombScarglePeriodFinder(PeriodFinder):
                 maximum_frequency=maximum_frequency,
             )
         )
+
+    def plot(
+        self, ax: Axes, period: PeriodResult, colour: Optional[str] = "orange"
+    ) -> Axes:
+        """Given a figure and an axis plot the interesting output of the object.
+
+        Args:
+            ax ([type]): Matplotlib axis
+            period (PeriodResult): Outputted period to plot around
+        """
+        ax = self.plot_periodogram(ax, period, colour=colour)
+        ax.set_title("Lomb Scargle Periodogram")
+        return ax
