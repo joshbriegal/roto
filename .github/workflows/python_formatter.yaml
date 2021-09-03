@@ -18,7 +18,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install isort black
-
+ff
       - name: Run isort
         run: isort .
 
@@ -27,7 +27,7 @@ jobs:
 
       - name: Check for modified files
         id: git-check
-        run: echo ::set-output name=modified::$(if git status --porcelain; then echo "true"; else echo "false"; fi)
+        run: echo ::set-output name=modified::$(if [ -z $(git status --porcelain) ]; then echo "true"; else echo "false"; fi)
 
       - name: Push changes
         if: steps.git-check.outputs.modified == 'true'
