@@ -7,7 +7,6 @@ import numpy as np
 import pandas as pd
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
-from matplotlib.ticker import ScalarFormatter
 from scipy.stats import gaussian_kde, median_abs_deviation
 
 from src.methods.fft import FFTPeriodFinder
@@ -20,6 +19,8 @@ from src.plotting.plotting_tools import (
     create_axis_with_formatter,
     split_phase,
 )
+
+from matplotlib.ticker import ScalarFormatter
 
 DEFAULT_COLOUR_CYCLE = cycle(plt.rcParams["axes.prop_cycle"].by_key()["color"])
 
