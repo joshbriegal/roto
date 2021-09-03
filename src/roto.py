@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
-import numpy as np
+
 import pandas as pd
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
@@ -15,12 +15,11 @@ from src.methods.gacf import GACFPeriodFinder
 from src.methods.gaussianprocess import GPPeriodFinder
 from src.methods.lombscargle import LombScarglePeriodFinder
 from src.methods.periodfinder import PeriodResult
-from src.plotting.plotting_tools import (
-    calculate_phase,
-    create_axis_with_formatter,
-    split_phase,
-)
+from src.plotting.plotting_tools import (calculate_phase,
+                                         create_axis_with_formatter,
+                                         split_phase)
 
+import numpy as np
 DEFAULT_COLOUR_CYCLE = cycle(plt.rcParams["axes.prop_cycle"].by_key()["color"])
 
 
