@@ -22,11 +22,11 @@ setuptools.setup(
     ],
     package_dir={"": "src"},
     # packages=["roto"],
-    packages=setuptools.find_packages(where='src'),
+    packages=setuptools.find_packages(where="src"),
     python_requires=">=3.6",
     install_requires=[
-        'astropy',
-        'gacf==1.0.0',
+        "astropy",
+        "gacf==1.0.0",
         "numpy",
         "peakutils==1.3.3",
         "pandas",
@@ -34,6 +34,6 @@ setuptools.setup(
         "celerite2",
         "pymc3_ext",
         "corner",
-        "matplotlib"
-    ]
+        "matplotlib",
+    ],
 )

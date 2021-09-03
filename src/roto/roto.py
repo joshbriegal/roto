@@ -15,7 +15,7 @@ from src.roto.methods.gacf import GACFPeriodFinder
 from src.roto.methods.gaussianprocess import GPPeriodFinder
 from src.roto.methods.lombscargle import LombScarglePeriodFinder
 from src.roto.methods.periodfinder import PeriodResult
-from src.roto.plotting .plotting_tools import (
+from src.roto.plotting.plotting_tools import (
     calculate_phase,
     create_axis_with_formatter,
     split_phase,
