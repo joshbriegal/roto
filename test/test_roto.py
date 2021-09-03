@@ -7,8 +7,8 @@ from unittest import mock
 
 import pytest
 
-from src.methods.periodfinder import PeriodFinder, PeriodResult
-from src.roto import RoTo
+from src.roto.methods.periodfinder import PeriodFinder, PeriodResult
+from src.roto.roto import RoTo
 
 inverse_methods_dictionary = {method: name for name, method in RoTo.METHODS.items()}
 
@@ -43,10 +43,10 @@ def test_create_roto_only_gp(timeseries, flux, flux_errors):
     assert list(roto.methods.keys()) == ["lombscargle", "gp"]
 
 
-@mock.patch("src.roto.LombScarglePeriodFinder", autospec=True)
-@mock.patch("src.roto.FFTPeriodFinder", autospec=True)
-@mock.patch("src.roto.GACFPeriodFinder", autospec=True)
-@mock.patch("src.roto.GPPeriodFinder", autospec=True)
+@mock.patch("roto.roto.LombScarglePeriodFinder", autospec=True)
+@mock.patch("roto.roto.FFTPeriodFinder", autospec=True)
+@mock.patch("roto.roto.GACFPeriodFinder", autospec=True)
+@mock.patch("roto.roto.GPPeriodFinder", autospec=True)
 def test_call(mock_gp, mock_gacf, mock_fft, mock_ls, timeseries, flux, flux_errors):
 
     mock_gacf_object = mock.Mock(return_value=PeriodResult(1))
@@ -108,9 +108,9 @@ def test_best_period(
     assert best_period == PeriodResult(period, error, error, outputted_method)
 
 
-@mock.patch("src.roto.np.mean", autospec=True, return_value=69)
-@mock.patch("src.roto.np.std", autospec=True, return_value=2)
-@mock.patch("src.roto.np.sqrt", autospec=True, return_value=1)
+@mock.patch("roto.roto.np.mean", autospec=True, return_value=69)
+@mock.patch("roto.roto.np.std", autospec=True, return_value=2)
+@mock.patch("roto.roto.np.sqrt", autospec=True, return_value=1)
 @pytest.mark.parametrize(
     "include, periods",
     [
@@ -153,9 +153,9 @@ def test_best_period_include_wrong_type(timeseries, flux, flux_errors):
         roto.best_period("mean", include=["non_existent_method"])
 
 
-@mock.patch("src.roto.np.mean", autospec=True, return_value=69)
-@mock.patch("src.roto.np.std", autospec=True, return_value=2)
-@mock.patch("src.roto.np.sqrt", autospec=True, return_value=1)
+@mock.patch("roto.roto.np.mean", autospec=True, return_value=69)
+@mock.patch("roto.roto.np.std", autospec=True, return_value=2)
+@mock.patch("roto.roto.np.sqrt", autospec=True, return_value=1)
 @pytest.mark.parametrize(
     "exclude, periods",
     [
