@@ -1,6 +1,6 @@
 from astropy.io import ascii
 
-from src.roto.roto import RoTo
+from roto.roto import RoTo
 
 if __name__ == "__main__":
 

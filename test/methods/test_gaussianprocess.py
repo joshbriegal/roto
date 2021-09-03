@@ -3,11 +3,11 @@ from unittest import mock
 import numpy as np
 from numpy.testing import assert_equal
 
-from src.roto.methods.gaussianprocess import GPPeriodFinder
-from src.roto.methods.periodfinder import PeriodResult
+from roto.methods.gaussianprocess import GPPeriodFinder
+from roto.methods.periodfinder import PeriodResult
 
 
-@mock.patch("src.roto.methods.gaussianprocess.np.nanmedian", return_value=3.0)
+@mock.patch("roto.methods.gaussianprocess.np.nanmedian", return_value=3.0)
 def test_init(mock_median, timeseries, flux, flux_errors):
 
     pf = GPPeriodFinder(timeseries, flux, flux_errors)
@@ -100,8 +100,8 @@ def test_calculate_gp_period_no_mcmc_remove_outliers(
 
 
 @mock.patch.object(GPPeriodFinder, "build_model")
-@mock.patch("src.roto.methods.gaussianprocess.pmx.sample")
-@mock.patch("src.roto.methods.gaussianprocess.np.percentile", return_value=[0, 1, 2])
+@mock.patch("roto.methods.gaussianprocess.pmx.sample")
+@mock.patch("roto.methods.gaussianprocess.np.percentile", return_value=[0, 1, 2])
 def test_calculate_gp_period_mcmc(
     mock_percentile, mock_sample, mock_build_model, timeseries, flux, flux_errors
 ):

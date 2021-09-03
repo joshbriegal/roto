@@ -4,7 +4,7 @@ import numpy as np
 from astropy.timeseries import LombScargle
 from numpy.testing import assert_equal
 
-from src.roto.methods.lombscargle import LombScarglePeriodFinder
+from roto.methods.lombscargle import LombScarglePeriodFinder
 
 
 def test_init(timeseries, flux, flux_errors):

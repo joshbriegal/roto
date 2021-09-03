@@ -4,7 +4,7 @@ import numpy as np
 import numpy.fft as fft
 from matplotlib.axes import Axes
 
-from src.roto.methods.periodfinder import PeriodFinder, Periodogram, PeriodResult
+from roto.methods.periodfinder import PeriodFinder, Periodogram, PeriodResult
 
 
 class FFTPeriodFinder(PeriodFinder):
