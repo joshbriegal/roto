@@ -4,9 +4,9 @@ import numpy as np
 from gacf import GACF
 from numpy.testing import assert_equal
 
-from src.roto.methods.fft import FFTPeriodFinder
-from src.roto.methods.gacf import GACFPeriodFinder
-from src.roto.methods.periodfinder import PeriodResult
+from roto.methods.fft import FFTPeriodFinder
+from roto.methods.gacf import GACFPeriodFinder
+from roto.methods.periodfinder import PeriodResult
 
 
 def test_init(timeseries, flux, flux_errors):
@@ -62,7 +62,7 @@ def test_autocorrelation(mock_gacf, timeseries, flux, flux_errors):
     assert_equal(correlations, mock_gacf.return_value[1])
 
 
-@mock.patch("src.roto.methods.gacf.FFTPeriodFinder", autospec=True)
+@mock.patch("roto.methods.gacf.FFTPeriodFinder", autospec=True)
 def test_call(mock_fft, timeseries, flux, period):
 
     mock_fft_object = mock.Mock(return_value=PeriodResult(period))
@@ -82,8 +82,8 @@ def test_call(mock_fft, timeseries, flux, period):
     assert outputted_period.pos_error == 0
 
 
-@mock.patch("src.roto.methods.gacf.median_abs_deviation", autospec=True)
-@mock.patch("src.roto.methods.gacf.np.median", autospec=True)
+@mock.patch("roto.methods.gacf.median_abs_deviation", autospec=True)
+@mock.patch("roto.methods.gacf.np.median", autospec=True)
 def test_find_acf_peaks_sine(mock_median, mock_mad):
 
     period = 1.23
@@ -110,8 +110,8 @@ def test_find_acf_peaks_sine(mock_median, mock_mad):
     assert outputted_period.pos_error == 0.1 * 1.483 / np.sqrt(len(valid_peaks) - 1)
 
 
-@mock.patch("src.roto.methods.gacf.median_abs_deviation", autospec=True)
-@mock.patch("src.roto.methods.gacf.np.median", autospec=True)
+@mock.patch("roto.methods.gacf.median_abs_deviation", autospec=True)
+@mock.patch("roto.methods.gacf.np.median", autospec=True)
 def test_find_acf_peaks_sin_short_period(mock_median, mock_mad):
 
     period = 0.04
@@ -140,8 +140,8 @@ def test_find_acf_peaks_sin_short_period(mock_median, mock_mad):
     assert outputted_period.pos_error == 0.1 * 1.483 / np.sqrt(len(valid_peaks) - 1)
 
 
-@mock.patch("src.roto.methods.gacf.median_abs_deviation", autospec=True)
-@mock.patch("src.roto.methods.gacf.np.median", autospec=True)
+@mock.patch("roto.methods.gacf.median_abs_deviation", autospec=True)
+@mock.patch("roto.methods.gacf.np.median", autospec=True)
 def test_find_acf_peaks_sine_long_period(mock_median, mock_mad):
 
     period = 7.5

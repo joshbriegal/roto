@@ -6,8 +6,8 @@ from gacf import GACF
 from matplotlib.axes import Axes
 from scipy.stats import median_abs_deviation
 
-from src.roto.methods.fft import FFTPeriodFinder
-from src.roto.methods.periodfinder import PeriodFinder, PeriodResult
+from roto.methods.fft import FFTPeriodFinder
+from roto.methods.periodfinder import PeriodFinder, PeriodResult
 
 
 class GACFPeriodFinder(PeriodFinder):

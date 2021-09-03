@@ -7,8 +7,8 @@ from unittest import mock
 
 import pytest
 
-from src.roto.methods.periodfinder import PeriodFinder, PeriodResult
-from src.roto.roto import RoTo
+from roto.methods.periodfinder import PeriodFinder, PeriodResult
+from roto.roto import RoTo
 
 inverse_methods_dictionary = {method: name for name, method in RoTo.METHODS.items()}
 

@@ -10,12 +10,12 @@ from matplotlib.figure import Figure
 from matplotlib.ticker import ScalarFormatter
 from scipy.stats import gaussian_kde, median_abs_deviation
 
-from src.roto.methods.fft import FFTPeriodFinder
-from src.roto.methods.gacf import GACFPeriodFinder
-from src.roto.methods.gaussianprocess import GPPeriodFinder
-from src.roto.methods.lombscargle import LombScarglePeriodFinder
-from src.roto.methods.periodfinder import PeriodResult
-from src.roto.plotting.plotting_tools import (
+from roto.methods.fft import FFTPeriodFinder
+from roto.methods.gacf import GACFPeriodFinder
+from roto.methods.gaussianprocess import GPPeriodFinder
+from roto.methods.lombscargle import LombScarglePeriodFinder
+from roto.methods.periodfinder import PeriodResult
+from roto.plotting.plotting_tools import (
     calculate_phase,
     create_axis_with_formatter,
     split_phase,

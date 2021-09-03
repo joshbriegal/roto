@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_equal
 
-from src.roto.methods.periodfinder import PeriodResult
+from roto.methods.periodfinder import PeriodResult
 
 
 class TestPeriodResult:

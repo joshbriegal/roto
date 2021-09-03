@@ -11,7 +11,7 @@ from celerite2.theano import GaussianProcess, terms
 from corner import corner
 from matplotlib.axes import Axes
 
-from src.roto.methods.periodfinder import PeriodFinder, PeriodResult
+from roto.methods.periodfinder import PeriodFinder, PeriodResult
 
 
 class GPPeriodFinder(PeriodFinder):

@@ -3,8 +3,8 @@ from unittest import mock
 import numpy as np
 from numpy.testing import assert_almost_equal, assert_equal
 
-from src.roto.methods.fft import FFTPeriodFinder
-from src.roto.methods.periodfinder import PeriodFinder
+from roto.methods.fft import FFTPeriodFinder
+from roto.methods.periodfinder import PeriodFinder
 
 
 def test_init(timeseries, flux, flux_errors):
@@ -16,8 +16,8 @@ def test_init(timeseries, flux, flux_errors):
     assert_equal(pf.flux_errors, flux_errors)
 
 
-@mock.patch("src.roto.methods.fft.fft.rfft", autospec=True)
-@mock.patch("src.roto.methods.fft.fft.rfftfreq", autospec=True)
+@mock.patch("roto.methods.fft.fft.rfft", autospec=True)
+@mock.patch("roto.methods.fft.fft.rfftfreq", autospec=True)
 def test_periodogram(mock_rfftfreq, mock_rfft, timeseries, flux, flux_errors):
 
     mock_rfft.return_value = np.ones(10)
