@@ -1,3 +1,4 @@
+from math import ceil
 from os.path import splitext
 from typing import Optional, Tuple
 
@@ -25,7 +26,8 @@ class GPPeriodFinder(PeriodFinder):
         flux_errors: Optional[np.ndarray] = None,
         min_ratio_of_maximum_peak_size: float = 0.2,
         samples_per_peak: int = 3,
-        units: str = "days",
+        time_units: str = "days",
+        flux_units: str = "relative flux units",
         gp_seed_period: Optional[float] = None,
     ):
         """
@@ -48,14 +50,22 @@ class GPPeriodFinder(PeriodFinder):
             flux_errors,
             min_ratio_of_maximum_peak_size,
             samples_per_peak,
-            units,
+            time_units,
+            flux_units,
         )
         self.mask = np.ones(len(self.timeseries), dtype=bool)
+        self.median_flux = np.nanmedian(self.flux)
 
-        # convert data into ppt format
-        fmed = np.nanmedian(self.flux)
-        self.flux_ppt = (self.flux / fmed - 1) * 1.0e3
-        self.flux_errors_ppt = (self.flux_errors / fmed) * 1.0e3
+        # convert data into ppt format if input units correct
+        if self.flux_units == "relative flux units":
+            self.flux_ppt = (self.flux / self.median_flux - 1) * 1.0e3
+            self.flux_errors_ppt = (self.flux_errors / self.median_flux) * 1.0e3
+        else:
+            print(
+                "Warning: Not converting units as cannot handle anything other than relative flux units"
+            )
+            self.flux_ppt = self.flux
+            self.flux_errors_ppt = self.flux_errors
 
     def calculate_periodogram(self, **kwargs) -> None:
         """A "periodogram" does not exist for a GP
@@ -277,7 +287,7 @@ class GPPeriodFinder(PeriodFinder):
             capsize=10,
         )
 
-        ax.set_xlabel(f"Period / {self.units}")
+        ax.set_xlabel(f"Period / {self.time_units}")
         ax.set_yticks([])
         ax.set_ylabel("Period Posterior")
         ax.set_title("Gaussian Process Model")
@@ -287,14 +297,26 @@ class GPPeriodFinder(PeriodFinder):
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
 
         mu, var = pmx.eval_in_model(
-            self.gp.predict(self.flux[self.mask], t=timeseries, return_var=True),
+            self.gp.predict(self.flux_ppt[self.mask], t=timeseries, return_var=True),
             point=self.solution,
             model=self.model,
         )
         mu += self.solution["mean"]
-        std = np.sqrt(var)
 
-        return mu, std
+        # convert data from ppt back into rel flux
+        if self.flux_units == "relative flux units":
+            mu_rel = (mu / 1.0e3 + 1) * self.median_flux
+            var_rel = (var / 1.0e3) * self.median_flux
+        else:
+            print(
+                "Warning: Not converting units as cannot handle anything other than relative flux units"
+            )
+            mu_rel = mu
+            var_rel = var
+
+        std_rel = np.sqrt(var_rel)
+
+        return mu_rel, std_rel
 
     def plot_gp_predictions(self, ax: Axes, colour: Optional[str] = "orange") -> Axes:
         """Plot GP model predictions.
@@ -315,20 +337,34 @@ class GPPeriodFinder(PeriodFinder):
 
         ax.plot(model_timeseries, mu, color=colour, zorder=2)
 
-    def plot_gp_residuals(self, ax: Axes, colour: Optional[str] = "orange") -> Axes:
+    def plot_gp_residuals(
+        self,
+        ax: Axes,
+        colour: Optional[str] = "orange",
+        max_number_of_points: float = 2000,
+    ) -> Axes:
         """Plot GP model predictions.
 
         Args:
             ax (Axes):  Matplotlib axis
         """
 
-        mu, std = self._generate_plotting_predictions(self.timeseries)
+        if len(self.timeseries) > max_number_of_points:
+            # downsample for plotting
+            n_times_over = len(self.timeseries) / max_number_of_points
+            plotting_timeseries = self.timeseries[:: ceil(n_times_over)]
+            plotting_flux = self.flux[:: ceil(n_times_over)]
+        else:
+            plotting_timeseries = self.timeseries
+            plotting_flux = self.flux
 
-        residuals = self.flux - mu
+        mu, std = self._generate_plotting_predictions(plotting_timeseries)
 
-        ax.fill_between(self.timeseries, std, -std, color=colour, alpha=0.2)
-        ax.scatter(self.timeseries, residuals, color="k", s=1)
-        ax.set_xlabel(f"Time / {self.units}")
+        residuals = plotting_flux - mu
+
+        ax.fill_between(plotting_timeseries, std, -std, color=colour, alpha=0.2)
+        ax.scatter(plotting_timeseries, residuals, color="k", s=1)
+        ax.set_xlabel(f"Time / {self.time_units}")
         ax.set_ylabel("Residuals")
 
         return ax

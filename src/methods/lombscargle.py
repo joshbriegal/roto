@@ -19,7 +19,8 @@ class LombScarglePeriodFinder(PeriodFinder):
         flux_errors: Optional[np.ndarray] = None,
         min_ratio_of_maximum_peak_size: float = 0.2,
         samples_per_peak: int = 3,
-        units: str = "days",
+        time_units: str = "days",
+        flux_units: str = "relative flux units",
         fit_mean: Optional[bool] = True,
         center_data: Optional[bool] = True,
         nterms: Optional[bool] = 1,
@@ -41,7 +42,8 @@ class LombScarglePeriodFinder(PeriodFinder):
             flux_errors,
             min_ratio_of_maximum_peak_size,
             samples_per_peak,
-            units,
+            time_units,
+            flux_units,
         )
 
         self._lombscargle = LombScargle(

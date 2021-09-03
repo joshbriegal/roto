@@ -47,7 +47,8 @@ class RoTo:
         flux_errors: Optional[np.ndarray] = None,
         methods_parameters: Optional[dict] = None,
         name: str = "Unnamed RoTo Object",
-        units: str = "days",
+        time_units: str = "days",
+        flux_units: str = "relative flux units",
     ):
         self.name = name
 
@@ -57,24 +58,34 @@ class RoTo:
 
         timeseries_diffs = np.diff(self.timeseries)
         self.regular_sampling = (timeseries_diffs.max() - timeseries_diffs.min()) < 1e-5
-        self.units = units
-        if self.units != "days":
+        self.time_units = time_units
+        if self.time_units != "days":
             print(
-                "Warning: GP prior scaled to expect data in days. Check prior or convert units."
+                "Warning: GP prior scaled to expect timeseries data in days. Check prior or convert units."
+            )
+        self.flux_units = flux_units
+        if self.flux_units != "relative flux units":
+            print(
+                "Warning: GP priot scaled to expect flux data in relative flux units. Check prior or convert units."
             )
 
-        self.methods = self._parse_constructor_parameters(
-            methods_parameters, self.units
-        )
+        self.methods = self._parse_constructor_parameters(methods_parameters)
 
         self.periods = {}
 
     def _parse_constructor_parameters(
-        self, methods_parameters: Optional[dict] = None, units: str = "days"
+        self,
+        methods_parameters: Optional[dict] = None,
     ) -> dict:
         if methods_parameters is None:
             return {
-                name: method(self.timeseries, self.flux, self.flux_errors, units=units)
+                name: method(
+                    self.timeseries,
+                    self.flux,
+                    self.flux_errors,
+                    time_units=self.time_units,
+                    flux_units=self.flux_units,
+                )
                 for name, method in self.METHODS.items()
                 if (name != "fft") or (self.regular_sampling)
             }
@@ -86,7 +97,12 @@ class RoTo:
 
         for method, kwargs in methods_parameters.items():
             methods[method] = self.METHODS[method](
-                self.timeseries, self.flux, self.flux_errors, units=units, **kwargs
+                self.timeseries,
+                self.flux,
+                self.flux_errors,
+                time_units=self.time_units,
+                flux_units=self.flux_units,
+                **kwargs,
             )
 
         return methods
@@ -369,7 +385,7 @@ class RoTo:
         ax.set_xlabel("Period")
         two_sided_error = np.average([best_period.neg_error, best_period.pos_error])
         ax.set_title(
-            f"Adopted Period: {best_period.period:.2f} ± {two_sided_error:.2f} {self.units}"
+            f"Adopted Period: {best_period.period:.2f} ± {two_sided_error:.2f} {self.time_units}"
         )
 
         ax.legend()
@@ -416,8 +432,8 @@ class RoTo:
             Axes: Matplotlib axis
         """
         ax.scatter(self.timeseries, self.flux, s=1, color="k")
-        ax.set_xlabel(f"Time / {self.units}")
-        ax.set_ylabel("Flux")
+        ax.set_xlabel(f"Time / {self.time_units}")
+        ax.set_ylabel(f"Flux / {self.flux_units}")
 
         return ax
 
@@ -440,10 +456,10 @@ class RoTo:
         for phase, flux in zip(split_phases, split_flux):
             ax.scatter(phase, flux, color=next(colours), s=1)
 
-        ax.set_title(f"Period: {period:.4f} {self.units}")
+        ax.set_title(f"Period: {period:.4f} {self.time_units}")
         ax.set_xlim([0, 1])
         ax.set_xlabel("Phase")
-        ax.set_ylabel("Flux")
+        ax.set_ylabel(f"Flux / {self.flux_units}")
 
         return ax
 
