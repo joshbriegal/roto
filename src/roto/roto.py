@@ -433,7 +433,18 @@ class RoTo:
         Returns:
             Axes: Matplotlib axis
         """
-        ax.scatter(self.timeseries, self.flux, s=1, color="k")
+        ax.errorbar(
+            self.timeseries,
+            self.flux,
+            self.flux_errors,
+            markersize=1,
+            errorevery=2,
+            linestyle=" ",
+            marker=".",
+            color="k",
+            capsize=1,
+            elinewidth=1,
+        )
         ax.set_xlabel(f"Time / {self.time_units}")
         ax.set_ylabel(f"Flux / {self.flux_units}")
 
