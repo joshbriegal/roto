@@ -144,6 +144,7 @@ class GPPeriodFinder(PeriodFinder):
             sigma_p = float("{:.5f}".format(percentiles[2] - percentiles[1]))
 
             self.trace = trace
+            self.model = model
 
             return PeriodResult(
                 period=med_p,
