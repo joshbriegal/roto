@@ -216,7 +216,7 @@ class GPPeriodFinder(PeriodFinder):
             gp = GaussianProcess(
                 kernel,
                 t=self.timeseries[self.mask],
-                diag=tt.add(self.flux_ppt[self.mask] ** 2, tt.exp(2 * log_jitter)),
+                diag=tt.add(self.flux_errors_ppt[self.mask] ** 2, tt.exp(2 * log_jitter)),
                 mean=mean,
                 quiet=True,
             )
