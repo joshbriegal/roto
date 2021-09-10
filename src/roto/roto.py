@@ -68,7 +68,7 @@ class RoTo:
         self.flux_units = flux_units
         if self.flux_units != "relative flux units":
             print(
-                "Warning: GP priot scaled to expect flux data in relative flux units. Check prior or convert units."
+                "Warning: GP prior scaled to expect flux data in relative flux units. Check prior or convert units."
             )
 
         self.methods = self._parse_constructor_parameters(methods_parameters)
@@ -304,9 +304,8 @@ class RoTo:
                     self.periods[method_name].period,
                 )
 
-        fig.tight_layout()
         if savefig:
-            fig.savefig(filename)
+            fig.savefig(filename, bbox_inches='tight', pad_inches=.25)
         if show:
             plt.show()
 
@@ -395,7 +394,11 @@ class RoTo:
         return ax
 
     def plot_gp_diagnostics(
-        self, show: bool = True, savefig: bool = False, filename: str = ""
+        self,
+        show: bool = True,
+        savefig: bool = False,
+        filename: str = "",
+        fileext: str = "pdf",
     ):
         """Plot Gaussian Process diagnostic outputs figures.
 
@@ -403,6 +406,7 @@ class RoTo:
             show (bool, optional): Show interactive plot. Defaults to True.
             savefig (bool, optional): Save figure to pdf. Defaults to False.
             filename (Optional[str], optional): Name of pdf. Defaults to None.
+            fileext (str, optional): File extension to save figure. Defaults to "pdf".
 
         Raises:
             RuntimeError: If no GP found.
@@ -414,12 +418,14 @@ class RoTo:
             filename = f"{self.name}.pdf"
 
         try:
-            self.methods["gp"].plot_trace(show=show, savefig=savefig, filename=filename)
+            self.methods["gp"].plot_trace(
+                show=show, savefig=savefig, filename=filename, fileext=fileext
+            )
         except RuntimeError as trace_err:
             print(trace_err)
         try:
             self.methods["gp"].plot_distributions(
-                show=show, savefig=savefig, filename=filename
+                show=show, savefig=savefig, filename=filename, fileext=fileext
             )
         except (RuntimeError, ValueError) as dist_err:
             print(dist_err)
@@ -489,10 +495,11 @@ class RoTo:
         unit_grid_height = 1
 
         data_plot_size = (2, 3)  # in units of grid width, height
-        residuals_plot_size = (2, 2)
+        residuals_plot_size = (2, 1)
         distributions_plot_size = (1, 3)
         phase_fold_plot_size = (1, 3)
         method_plot_size = (1, 3)
+        spacer_plot_size = (2, 1)
 
         if summary:
             # just plot summary stats, no method plots.
@@ -516,6 +523,7 @@ class RoTo:
             + (residuals_plot_size[1] * int(plot_gp))
             + distributions_plot_size[1]
             + method_plot_size[1] * len(methods)
+            + spacer_plot_size[1] * (1 + len(methods))
         )
 
         figsize = (
@@ -525,6 +533,7 @@ class RoTo:
 
         fig = plt.figure(figsize=figsize)
         gridspec = fig.add_gridspec(n_grid_units_height, n_grid_units_width)
+        plt.subplots_adjust(hspace=.0, wspace=0.2)
 
         axes = {}
         formatter = ScalarFormatter()
@@ -536,9 +545,10 @@ class RoTo:
         height += data_plot_size[1]
         if plot_gp:
             axes["residuals"] = create_axis_with_formatter(
-                fig, gridspec[height : height + residuals_plot_size[1], :], formatter
+                fig, gridspec[height : height + residuals_plot_size[1], :], formatter, sharex=axes["data"]
             )
             height += residuals_plot_size[1]
+        height += spacer_plot_size[1]
 
         axes["distributions"] = create_axis_with_formatter(
             fig, gridspec[height : height + distributions_plot_size[1], 0], formatter
@@ -547,6 +557,7 @@ class RoTo:
             fig, gridspec[height : height + phase_fold_plot_size[1], 1], formatter
         )
         height += phase_fold_plot_size[1]
+        height += spacer_plot_size[1]
 
         for method in methods:
             axes[method] = {
@@ -558,7 +569,8 @@ class RoTo:
                 ),
             }
             height += method_plot_size[1]
+            height += spacer_plot_size[1]
 
-        fig.suptitle(self.name)
+        axes["data"].set_title(self.name)
 
         return fig, axes

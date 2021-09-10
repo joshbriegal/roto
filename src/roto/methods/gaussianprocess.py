@@ -2,6 +2,7 @@ from math import ceil
 from os.path import splitext
 from typing import Optional, Tuple
 
+import arviz as az
 import aesara_theano_fallback.tensor as tt
 import matplotlib.pyplot as plt
 import numpy as np
@@ -12,6 +13,7 @@ from corner import corner
 from matplotlib.axes import Axes
 
 from roto.methods.periodfinder import PeriodFinder, PeriodResult
+from roto.plotting.plotting_tools import rel_flux_to_ppt, ppt_to_rel_flux
 
 
 class GPPeriodFinder(PeriodFinder):
@@ -58,8 +60,16 @@ class GPPeriodFinder(PeriodFinder):
 
         # convert data into ppt format if input units correct
         if self.flux_units == "relative flux units":
-            self.flux_ppt = (self.flux / self.median_flux - 1) * 1.0e3
-            self.flux_errors_ppt = (self.flux_errors / self.median_flux) * 1.0e3
+            if self.median_flux != 0:
+                self.flux_ppt = rel_flux_to_ppt(self.flux, normalise=True, normalisation_value=self.median_flux, center_around=1.0)
+                self.flux_errors_ppt = rel_flux_to_ppt(self.flux_errors, normalise=True, normalisation_value=self.median_flux, center_around=0.0)
+            else:
+                self.flux_ppt = rel_flux_to_ppt(self.flux)
+                self.flux_errors_ppt =  rel_flux_to_ppt(self.flux_errors)
+
+        elif self.flux_units == "ppt":
+            self.flux_ppt = self.flux
+            self.flux_errors_ppt = self.flux_errors
         else:
             print(
                 "Warning: Not converting units as cannot handle anything other than relative flux units"
@@ -132,8 +142,8 @@ class GPPeriodFinder(PeriodFinder):
                     cores=cores,
                     chains=chains,
                     target_accept=target_accept,
-                    return_inferencedata=True,
-                    random_seed=[13089739, 13089740],
+                    return_inferencedata=True,  # returns an arviz.InferenceData object
+                    discard_tuned_samples=True,
                 )
 
             # estimate period and uncertainty
@@ -306,10 +316,18 @@ class GPPeriodFinder(PeriodFinder):
         )
         mu += self.solution["mean"]
 
+
         # convert data from ppt back into rel flux
         if self.flux_units == "relative flux units":
-            mu_rel = (mu / 1.0e3 + 1) * self.median_flux
-            var_rel = (var / 1.0e3) * self.median_flux
+            if self.median_flux != 0:
+                mu_rel = ppt_to_rel_flux(mu, normalise=True, normalisation_value=self.median_flux, center_around=1.0)
+                var_rel = ppt_to_rel_flux(var, normalise=True, normalisation_value=self.median_flux, center_around=0.0)
+            else:
+                mu_rel = ppt_to_rel_flux(mu)
+                var_rel =  ppt_to_rel_flux(var)
+        elif self.flux_units == "ppt":
+            mu_rel = mu
+            var_rel = var
         else:
             print(
                 "Warning: Not converting units as cannot handle anything other than relative flux units"
@@ -328,7 +346,7 @@ class GPPeriodFinder(PeriodFinder):
             ax (Axes):  Matplotlib axis
         """
         model_timeseries = np.linspace(
-            self.timeseries.min() - 5, self.timeseries.max() + 5, 2000
+            self.timeseries.min(), self.timeseries.max(), 2000
         )
 
         mu, std = self._generate_plotting_predictions(model_timeseries)
@@ -372,28 +390,30 @@ class GPPeriodFinder(PeriodFinder):
 
         return ax
 
-    def plot_trace(self, show: bool = True, savefig: bool = False, filename: str = ""):
+    def plot_trace(self, show: bool = True, savefig: bool = False, filename: str = "", fileext: str = "pdf"):
         """Plot trace using arviZ plot_trace.
 
         Args:
             show (bool, optional): Show using e.g. interactive backend. Defaults to True.
             savefig (bool, optional): Save figure. Defaults to False.
             filename (str, optional): Filename to save figure. Defaults to "" (saves as '_trace.pdf')
+            fileext (str, optional): File extension to save figure. Defaults to "pdf".
 
         Raises:
             RuntimeError: If no trace, will raise RuntimeError
         """
 
         if self.trace:
-            pm.traceplot(self.trace, show=show)
+            with self.model:
+                trace_ax = az.plot_trace(self.trace, show=show, combined=True, compact=True)
 
             if savefig:
-                plt.savefig(splitext(filename)[0] + "_trace.pdf")
+                plt.savefig(splitext(filename)[0] + "_trace." + fileext)
         else:
             raise RuntimeError("Cannot plot trace as no trace generated")
 
     def plot_distributions(
-        self, show: bool = True, savefig: bool = False, filename: str = ""
+        self, show: bool = True, savefig: bool = False, filename: str = "", fileext: str = "pdf"
     ):
         """Plot outputted parameter distributions corner plot.
 
@@ -401,6 +421,7 @@ class GPPeriodFinder(PeriodFinder):
             show (bool, optional): Show using e.g. interactive backend. Defaults to True.
             savefig (bool, optional): Save figure. Defaults to False.
             filename (str, optional): Filename to save figure. Defaults to "" (saves as '_distributions.pdf')
+            fileext (str, optional): File extension to save figure. Defaults to "pdf".
 
         Raises:
             RuntimeError: If no solution, will raise RuntimeError
@@ -421,6 +442,6 @@ class GPPeriodFinder(PeriodFinder):
             if show:
                 plt.show()
             if savefig:
-                fig.savefig(splitext(filename)[0] + "_distributions.pdf")
+                fig.savefig(splitext(filename)[0] + "_distributions." +  fileext)
         else:
             raise RuntimeError("Cannot plot distributions as no solution found.")

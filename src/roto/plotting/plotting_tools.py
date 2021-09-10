@@ -93,7 +93,7 @@ def bin_phase_curve(phase, data, statistic="median", bins=20):
 
 
 def create_axis_with_formatter(
-    fig: Figure, gridspec_position, formatter: Optional[Formatter] = None
+    fig: Figure, gridspec_position, formatter: Optional[Formatter] = None, **kwargs
 ) -> Axes:
     """Create subplot figure and apply formatter to x/y axis.
 
@@ -109,8 +109,42 @@ def create_axis_with_formatter(
         formatter = ScalarFormatter()
         formatter.set_scientific(False)
 
-    ax = fig.add_subplot(gridspec_position)
+    ax = fig.add_subplot(gridspec_position, **kwargs)
     ax.xaxis.set_major_formatter(formatter)
     ax.yaxis.set_major_formatter(formatter)
 
     return ax
+
+def rel_flux_to_ppt(flux_arr: np.ndarray, normalise: bool = False, normalisation_value: float = 1.0, center_around: float = 0.0) -> np.ndarray:
+    """Convert an array in relative flux into ppt
+
+    Args:
+        flux_arr (np.ndarray): [description]
+        normalise (bool, optional): [description]. Defaults to False.
+        normalisation_value (float, optional): [description]. Defaults to 1.0.
+        center_around (float, optional): [description]. Defaults to 0.0.
+
+    Returns:
+        np.ndarray: [description]
+    """
+    if not normalise:
+        return flux_arr * 1.0e3
+    else:
+        return (flux_arr / normalisation_value -  center_around) * 1.0e3
+
+def ppt_to_rel_flux(flux_arr: np.ndarray, normalise: bool = False, normalisation_value: float = 1.0, center_around: float = 0.0) -> np.ndarray:
+    """Convert an array in ppt into relative flux
+
+    Args:
+        flux_arr (np.ndarray): [description]
+        normalise (bool, optional): [description]. Defaults to False.
+        normalisation_value (float, optional): [description]. Defaults to 1.0.
+        center_around (float, optional): [description]. Defaults to 0.0.
+
+    Returns:
+        np.ndarray: [description]
+    """
+    if not normalise:
+        return flux_arr / 1.0e3
+    else:
+        return (flux_arr / 1.0e3 + center_around) * normalisation_value
