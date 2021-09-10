@@ -3,13 +3,13 @@ import numpy as np
 
 from roto import RoTo
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     name = "TIC 10863087"
 
-    lcf = lk.search_lightcurve(
-       name, mission="TESS", author="SPOC"
-    ).download_all(quality_bitmask="hardest", flux_column="pdcsap_flux")
+    lcf = lk.search_lightcurve(name, mission="TESS", author="SPOC").download_all(
+        quality_bitmask="hardest", flux_column="pdcsap_flux"
+    )
     lc = lcf.stitch().remove_nans().remove_outliers()
     lc = lc[:5000]
     _, mask = lc.flatten().remove_outliers(sigma=3.0, return_mask=True)
@@ -34,10 +34,15 @@ if __name__ == '__main__':
         #     "gp": {"gp_seed_period": 3.853},
         # },
     )
-    roto(gacf_method="peaks", do_mcmc=True, remove_outliers=False, draws=2000, cores=4, chains=4)
+    roto(
+        gacf_method="peaks",
+        do_mcmc=True,
+        remove_outliers=False,
+        draws=2000,
+        cores=4,
+        chains=4,
+    )
     print(roto)
     roto.plot(plot_gp=True, savefig=True, show=False)
 
     roto.plot_gp_diagnostics(show=False, savefig=True, fileext="png")
-
-

@@ -305,7 +305,7 @@ class RoTo:
                 )
 
         if savefig:
-            fig.savefig(filename, bbox_inches='tight', pad_inches=.25)
+            fig.savefig(filename, bbox_inches="tight", pad_inches=0.25)
         if show:
             plt.show()
 
@@ -533,7 +533,7 @@ class RoTo:
 
         fig = plt.figure(figsize=figsize)
         gridspec = fig.add_gridspec(n_grid_units_height, n_grid_units_width)
-        plt.subplots_adjust(hspace=.0, wspace=0.2)
+        plt.subplots_adjust(hspace=0.0, wspace=0.2)
 
         axes = {}
         formatter = ScalarFormatter()
@@ -545,7 +545,10 @@ class RoTo:
         height += data_plot_size[1]
         if plot_gp:
             axes["residuals"] = create_axis_with_formatter(
-                fig, gridspec[height : height + residuals_plot_size[1], :], formatter, sharex=axes["data"]
+                fig,
+                gridspec[height : height + residuals_plot_size[1], :],
+                formatter,
+                sharex=axes["data"],
             )
             height += residuals_plot_size[1]
         height += spacer_plot_size[1]

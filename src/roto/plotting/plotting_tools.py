@@ -115,7 +115,13 @@ def create_axis_with_formatter(
 
     return ax
 
-def rel_flux_to_ppt(flux_arr: np.ndarray, normalise: bool = False, normalisation_value: float = 1.0, center_around: float = 0.0) -> np.ndarray:
+
+def rel_flux_to_ppt(
+    flux_arr: np.ndarray,
+    normalise: bool = False,
+    normalisation_value: float = 1.0,
+    center_around: float = 0.0,
+) -> np.ndarray:
     """Convert an array in relative flux into ppt
 
     Args:
@@ -130,9 +136,15 @@ def rel_flux_to_ppt(flux_arr: np.ndarray, normalise: bool = False, normalisation
     if not normalise:
         return flux_arr * 1.0e3
     else:
-        return (flux_arr / normalisation_value -  center_around) * 1.0e3
+        return (flux_arr / normalisation_value - center_around) * 1.0e3
 
-def ppt_to_rel_flux(flux_arr: np.ndarray, normalise: bool = False, normalisation_value: float = 1.0, center_around: float = 0.0) -> np.ndarray:
+
+def ppt_to_rel_flux(
+    flux_arr: np.ndarray,
+    normalise: bool = False,
+    normalisation_value: float = 1.0,
+    center_around: float = 0.0,
+) -> np.ndarray:
     """Convert an array in ppt into relative flux
 
     Args:
