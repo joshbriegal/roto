@@ -136,7 +136,7 @@ def test_calculate_gp_period_mcmc(
         chains=2,
         target_accept=0.9,
         return_inferencedata=True,
-        random_seed=[13089739, 13089740],
+        discard_tuned_samples=True,
     )
 
     assert mock_percentile.call_count == 1
