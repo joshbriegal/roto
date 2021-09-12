@@ -201,7 +201,9 @@ class GPPeriodFinder(PeriodFinder):
             log_jitter = pm.Normal(
                 "log_jitter",
                 mu=np.log(np.nanmean(self.flux_errors_ppt[self.mask])),
-                sigma=2.0,
+                sigma=np.subtract(
+                    *np.percentile(self.flux_errors_ppt[self.mask], [90, 10])
+                ),
             )
 
             # SHOTerm kernel parameters for non-periodic variability (defaults adopted from exoplanet examples)
@@ -267,7 +269,6 @@ class GPPeriodFinder(PeriodFinder):
             ax ([type]): Matplotlib axis
             period (PeriodResult): Outputted period to plot around
         """
-        nperiods = 10
         xmin = 0
         xmax = 1
 
@@ -276,8 +277,6 @@ class GPPeriodFinder(PeriodFinder):
             xmax = min(
                 period.period + 5 * period.pos_error, max(period.period_distribution)
             )
-
-            bin_size = (period.neg_error + period.pos_error) / 5
 
             ax.hist(
                 period.period_distribution,
@@ -364,8 +363,11 @@ class GPPeriodFinder(PeriodFinder):
         Args:
             ax (Axes):  Matplotlib axis
         """
+        time_extent = self.timeseries.max() - self.timeseries.min()
         model_timeseries = np.linspace(
-            self.timeseries.min(), self.timeseries.max(), 2000
+            self.timeseries.min() - (time_extent * 0.05),
+            self.timeseries.max() + (time_extent * 0.05),
+            2000,
         )
 
         mu, std = self._generate_plotting_predictions(model_timeseries)
@@ -457,22 +459,23 @@ class GPPeriodFinder(PeriodFinder):
         Raises:
             RuntimeError: If no solution, will raise RuntimeError
         """
-        if self.solution:
+        if self.trace and self.solution:
 
             names = [
                 k for k in self.solution.keys() if (k[-2:] != "__") and (k != "pred")
             ]
 
             fig = corner(
-                self.solution,
+                self.trace,
                 names=names,
                 quantiles=[0.15865, 0.5, 0.84135],
                 show_titles=True,
                 max_n_ticks=4,
+                var_names=names,
             )
             if show:
                 plt.show()
             if savefig:
                 fig.savefig(splitext(filename)[0] + "_distributions." + fileext)
         else:
-            raise RuntimeError("Cannot plot distributions as no solution found.")
+            raise RuntimeError("Cannot plot distributions as no trace found.")

@@ -454,6 +454,11 @@ class RoTo:
         ax.set_xlabel(f"Time / {self.time_units}")
         ax.set_ylabel(f"Flux / {self.flux_units}")
 
+        ymin = np.min(self.flux - self.flux_errors)
+        ymax = np.max(self.flux + self.flux_errors)
+        yextent = ymax - ymin
+        ax.set_ylim([ymin - (yextent * 0.01), ymax + (yextent * 0.01)])
+
         return ax
 
     def plot_phase_folded_data(self, ax: Axes, period: float, epoch: float = 0) -> Axes:
