@@ -64,7 +64,13 @@ def test_call(mock_gp, mock_gacf, mock_fft, mock_ls, timeseries, flux, flux_erro
 
     with mock.patch.dict(
         RoTo.METHODS,
-        {"lombscargle": mock_ls, "fft": mock_fft, "gacf": mock_gacf, "gp": mock_gp, "broken": mock_broken},
+        {
+            "lombscargle": mock_ls,
+            "fft": mock_fft,
+            "gacf": mock_gacf,
+            "gp": mock_gp,
+            "broken": mock_broken,
+        },
     ) as patched_dict:
 
         roto = RoTo(timeseries, flux, flux_errors)

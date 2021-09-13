@@ -16,13 +16,17 @@ from roto.methods.gacf import GACFPeriodFinder
 from roto.methods.gaussianprocess import GPPeriodFinder
 from roto.methods.lombscargle import LombScarglePeriodFinder
 from roto.methods.periodfinder import PeriodResult
-from roto.plotting.plotting_tools import (calculate_phase,
-                                          create_axis_with_formatter,
-                                          split_phase)
+from roto.plotting.plotting_tools import (
+    calculate_phase,
+    create_axis_with_formatter,
+    split_phase,
+)
 
 DEFAULT_COLOUR_CYCLE = cycle(plt.rcParams["axes.prop_cycle"].by_key()["color"])
 
 logger = logging.getLogger(__name__)
+
+
 class RoTo:
 
     METHODS = {
