@@ -1,3 +1,4 @@
+import logging
 from itertools import cycle
 from typing import Dict, List, Optional, Tuple, Union
 
@@ -15,15 +16,13 @@ from roto.methods.gacf import GACFPeriodFinder
 from roto.methods.gaussianprocess import GPPeriodFinder
 from roto.methods.lombscargle import LombScarglePeriodFinder
 from roto.methods.periodfinder import PeriodResult
-from roto.plotting.plotting_tools import (
-    calculate_phase,
-    create_axis_with_formatter,
-    split_phase,
-)
+from roto.plotting.plotting_tools import (calculate_phase,
+                                          create_axis_with_formatter,
+                                          split_phase)
 
 DEFAULT_COLOUR_CYCLE = cycle(plt.rcParams["axes.prop_cycle"].by_key()["color"])
 
-
+logger = logging.getLogger(__name__)
 class RoTo:
 
     METHODS = {
@@ -62,13 +61,13 @@ class RoTo:
         self.regular_sampling = (timeseries_diffs.max() - timeseries_diffs.min()) < 1e-5
         self.time_units = time_units
         if self.time_units != "days":
-            print(
-                "Warning: GP prior scaled to expect timeseries data in days. Check prior or convert units."
+            logger.warning(
+                "GP prior scaled to expect timeseries data in days. Check prior or convert units."
             )
         self.flux_units = flux_units
         if self.flux_units != "relative flux units":
-            print(
-                "Warning: GP prior scaled to expect flux data in relative flux units. Check prior or convert units."
+            logger.warning(
+                "GP prior scaled to expect flux data in relative flux units. Check prior or convert units."
             )
 
         self.methods = self._parse_constructor_parameters(methods_parameters)
@@ -121,8 +120,12 @@ class RoTo:
                         ]
                     )
                     kwargs["gp_seed_period"] = average_period
-
-            self.periods[name] = method(**kwargs)
+            try:
+                self.periods[name] = method(**kwargs)
+            except Exception as e:
+                logger.error("Unable to run method %s" % name)
+                logger.error(e, exc_info=True)
+                continue
 
     def periods_to_table(self) -> pd.DataFrame:
         """Convert roto.periods into a DataFrame for display.
@@ -422,13 +425,15 @@ class RoTo:
                 show=show, savefig=savefig, filename=filename, fileext=fileext
             )
         except RuntimeError as trace_err:
-            print(trace_err)
+            logger.error("Unable to plot trace")
+            logger.error(trace_err, exc_info=True)
         try:
             self.methods["gp"].plot_distributions(
                 show=show, savefig=savefig, filename=filename, fileext=fileext
             )
         except (RuntimeError, ValueError) as dist_err:
-            print(dist_err)
+            logger.error("Unable to plot GP distributions")
+            logger.error(dist_err, exc_info=True)
 
     def plot_data(self, ax: Axes) -> Axes:
         """Scatter plot of input data.
