@@ -47,7 +47,7 @@ if __name__ == "__main__":
     )
     roto(
         gacf_method="peaks",
-        do_mcmc=False,
+        do_mcmc=True,
         remove_outliers=True,
         draws=2000,
         cores=4,

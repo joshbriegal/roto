@@ -207,9 +207,7 @@ class GPPeriodFinder(PeriodFinder):
             log_jitter = pm.Normal(
                 "log_jitter",
                 mu=np.log(np.nanmean(self.flux_errors_ppt[self.mask])),
-                sigma=np.subtract(
-                    *np.percentile(self.flux_errors_ppt[self.mask], [90, 10])
-                ),
+                sigma=2.0,
             )
 
             # SHOTerm kernel parameters for non-periodic variability (defaults adopted from exoplanet examples)
