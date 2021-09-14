@@ -149,9 +149,8 @@ class PeriodFinder(ABC):
                 1.0 / peak_frequencies[0]
             )  # just output largest peak in periodogram for now.
             return PeriodResult(period=period, method=self.__class__.__name__)
-        
-        return None
 
+        return None
 
     @abstractmethod
     def calculate_periodogram(self, **kwargs) -> Periodogram:
@@ -220,7 +219,7 @@ class PeriodFinder(ABC):
 
         period_axis = np.divide(1.0, self.periodogram.frequency_axis)
 
-        ax.semilogx(period_axis, self.periodogram.power_axis, lw=1, color='k')
+        ax.semilogx(period_axis, self.periodogram.power_axis, lw=1, color="k")
 
         ax.axvline(period.period, color=colour, lw=1)
         ax.axvspan(

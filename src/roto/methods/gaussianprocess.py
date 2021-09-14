@@ -280,7 +280,7 @@ class GPPeriodFinder(PeriodFinder):
                 period.period_distribution,
                 histtype="step",
                 bins=21,
-                color='k',
+                color="k",
             )
 
         else:
