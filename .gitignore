@@ -134,3 +134,6 @@ dmypy.json
 
 # PDFs - will need to uncomment if e.g. figures uploaded
 *.pdf
+*.png
+.DS_Store
+KIC_5110407_LC*.dat
