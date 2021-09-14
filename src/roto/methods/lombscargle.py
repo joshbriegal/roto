@@ -25,7 +25,7 @@ class LombScarglePeriodFinder(PeriodFinder):
         center_data: Optional[bool] = True,
         nterms: Optional[bool] = 1,
         normalization: Optional[bool] = "standard",
-    ):
+    ): 
         """
         Args:
             timeseries (np.ndarray): array like time series.
