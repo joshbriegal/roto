@@ -20,30 +20,32 @@ def split_phase(phase, data, timeseries=None, buff=0.9, nperiods=1):
     timeseriess = [] if timeseries is not None else None
 
     idx_changes = np.where(np.diff(phase) < 0)[0][::nperiods]
-    use_first = True if (phase[0] < 1.0 - buff) else False
-    use_last = True if (phase[-1] > buff) else False
+    if len(idx_changes) > 0:
+        use_first = True if (phase[0] < 1.0 - buff) else False
+        use_last = True if (phase[-1] > buff) else False
 
-    if use_first:
-        phases.append(phase[: idx_changes[0]])
-        datas.append(data[: idx_changes[0]])
-        if timeseriess is not None:
-            timeseriess.append(timeseries[: idx_changes[0]])
+        if use_first:
+            phases.append(phase[: idx_changes[0]])
+            datas.append(data[: idx_changes[0]])
+            if timeseriess is not None:
+                timeseriess.append(timeseries[: idx_changes[0]])
 
-    for i, idx in enumerate(idx_changes[:-1]):
-        phases.append(phase[idx + 1 : idx_changes[i + 1]])
-        datas.append(data[idx + 1 : idx_changes[i + 1]])
-        if timeseriess is not None:
-            timeseriess.append(timeseries[idx + 1 : idx_changes[i + 1]])
+        for i, idx in enumerate(idx_changes[:-1]):
+            phases.append(phase[idx + 1 : idx_changes[i + 1]])
+            datas.append(data[idx + 1 : idx_changes[i + 1]])
+            if timeseriess is not None:
+                timeseriess.append(timeseries[idx + 1 : idx_changes[i + 1]])
 
-    if use_last or np.any(np.diff(phase[idx_changes[-1] + 1 :]) < 0):
-        phases.append(phase[idx_changes[-1] :])
-        datas.append(data[idx_changes[-1] :])
+        if use_last or np.any(np.diff(phase[idx_changes[-1] + 1 :]) < 0):
+            phases.append(phase[idx_changes[-1] :])
+            datas.append(data[idx_changes[-1] :])
+            if timeseriess is not None:
+                timeseriess.append(timeseries[idx_changes[-1] :])
         if timeseriess is not None:
-            timeseriess.append(timeseries[idx_changes[-1] :])
-    if timeseriess is not None:
-        return phases, datas, timeseriess
-    else:
-        return phases, datas
+            return phases, datas, timeseriess
+        else:
+            return phases, datas
+    return [phase], [data]
 
 
 def calculate_phase(timeseries, period, epoch):

@@ -448,18 +448,44 @@ class RoTo:
         Returns:
             Axes: Matplotlib axis
         """
+
+        if "gp" in self.methods:
+            mask = self.methods['gp'].mask
+        else:
+            mask = np.ones(len(self.timeseries), dtype=bool)
+
         ax.errorbar(
-            self.timeseries,
-            self.flux,
-            self.flux_errors,
-            markersize=1,
-            errorevery=2,
-            linestyle=" ",
-            marker=".",
+            self.timeseries[mask],
+            self.flux[mask],
+            self.flux_errors[mask],
+            markersize=2,
+            errorevery=1,
+            linestyle="none",
+            marker="o",
             color="k",
-            capsize=1,
+            ecolor="gray",
+            alpha=0.7,
+            capsize=0,
             elinewidth=1,
+            mec='none'
         )
+
+        ax.errorbar(
+            self.timeseries[~mask],
+            self.flux[~mask],
+            self.flux_errors[~mask],
+            markersize=2,
+            errorevery=1,
+            linestyle="none",
+            marker="o",
+            color="k",
+            ecolor="gray",
+            alpha=0.3,
+            capsize=0,
+            elinewidth=1,
+            mec='none'
+        )
+
         ax.set_xlabel(f"Time / {self.time_units}")
         ax.set_ylabel(f"Flux / {self.flux_units}")
 
