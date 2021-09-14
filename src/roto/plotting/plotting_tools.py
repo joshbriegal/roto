@@ -1,3 +1,4 @@
+from math import floor, log10
 from typing import Optional
 
 import numpy as np
@@ -162,3 +163,21 @@ def ppt_to_rel_flux(
         return flux_arr / 1.0e3
     else:
         return (flux_arr / 1.0e3 + center_around) * normalisation_value
+
+
+def round_sig(x, sig=2, return_dp=False):
+    """Round a number to a number of significant digits.
+
+    Args:
+        x: number
+        sig (int, optional): Number of significant figures. Defaults to 2.
+        return_dp (bool, optional): If true also return dp (argument to round function). Defaults to False.
+
+    Returns:
+        [type]: Rounded number to sig sig figs.
+    """
+    dp = sig - int(floor(log10(abs(x)))) - 1
+    if return_dp:
+        return round(x, dp), dp
+    else:
+        return round(x, dp)

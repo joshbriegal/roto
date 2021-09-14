@@ -19,6 +19,7 @@ from roto.methods.periodfinder import PeriodResult
 from roto.plotting.plotting_tools import (
     calculate_phase,
     create_axis_with_formatter,
+    round_sig,
     split_phase,
 )
 
@@ -284,9 +285,13 @@ class RoTo:
             plot_gp=plot_gp,
         )
 
+        epoch = self.timeseries.min()
+
         self.plot_data(ax_dict["data"])
         self.plot_periods(ax_dict["distributions"])
-        self.plot_phase_folded_data(ax_dict["phase_fold"], self.best_period().period)
+        self.plot_phase_folded_data(
+            ax_dict["phase_fold"], self.best_period().period, epoch=epoch
+        )
 
         if not summary:
             for method_name, method in self.methods.items():
@@ -309,6 +314,7 @@ class RoTo:
                 self.plot_phase_folded_data(
                     ax_dict[method_name]["phase_fold"],
                     self.periods[method_name].period,
+                    epoch=epoch,
                 )
 
         if savefig:
@@ -392,8 +398,9 @@ class RoTo:
         ax.get_yaxis().set_visible(False)
         ax.set_xlabel("Period")
         two_sided_error = np.average([best_period.neg_error, best_period.pos_error])
+        error_rounded, error_precision = round_sig(two_sided_error, 2, return_dp=True)
         ax.set_title(
-            f"Adopted Period: {best_period.period:.2f} ± {two_sided_error:.2f} {self.time_units}"
+            f"Adopted Period: {round(best_period.period, error_precision)} ± {error_rounded} {self.time_units}"
         )
 
         ax.legend()

@@ -1,3 +1,4 @@
+import logging
 from math import ceil
 from os.path import splitext
 from typing import Optional, Tuple
@@ -14,6 +15,8 @@ from matplotlib.axes import Axes
 
 from roto.methods.periodfinder import PeriodFinder, PeriodResult
 from roto.plotting.plotting_tools import ppt_to_rel_flux, rel_flux_to_ppt
+
+logger = logging.getLogger(__name__)
 
 
 class GPPeriodFinder(PeriodFinder):
@@ -142,6 +145,9 @@ class GPPeriodFinder(PeriodFinder):
             self.mask = np.abs(residuals) < rms_sigma * rms
             model, map_soln = self.build_model(start=map_soln)
 
+        logger.info("MAP Solution found")
+        logger.debug(map_soln)
+
         # (optionally) run MCMC to sample from posterior
         if do_mcmc and model:
             with model:
@@ -269,19 +275,14 @@ class GPPeriodFinder(PeriodFinder):
             ax ([type]): Matplotlib axis
             period (PeriodResult): Outputted period to plot around
         """
-        xmin = 0
-        xmax = 1
 
         if period.period_distribution is not None:
-            xmin = period.period - 5 * period.neg_error
-            xmax = min(
-                period.period + 5 * period.pos_error, max(period.period_distribution)
-            )
 
             ax.hist(
                 period.period_distribution,
                 histtype="step",
-                bins=np.linspace(xmin - period.neg_error, xmax + period.pos_error),
+                bins=21,
+                # bins=np.linspace(xmin - period.neg_error, xmax + period.pos_error),
                 color=colour,
             )
 
@@ -294,7 +295,6 @@ class GPPeriodFinder(PeriodFinder):
                 alpha=0.2,
             )
 
-        ax.set_xlim([xmin, xmax])
         ax2 = ax.twinx()
         ax2.set_ylim([0, 1])
         ax2.get_yaxis().set_visible(False)
@@ -324,6 +324,7 @@ class GPPeriodFinder(PeriodFinder):
             model=self.model,
         )
         mu += self.solution["mean"]
+        std = np.sqrt(var)
 
         # convert data from ppt back into rel flux
         if self.flux_units == "relative flux units":
@@ -334,26 +335,24 @@ class GPPeriodFinder(PeriodFinder):
                     normalisation_value=self.median_flux,
                     center_around=1.0,
                 )
-                var_rel = ppt_to_rel_flux(
-                    var,
+                std_rel = ppt_to_rel_flux(
+                    std,
                     normalise=True,
                     normalisation_value=self.median_flux,
                     center_around=0.0,
                 )
             else:
                 mu_rel = ppt_to_rel_flux(mu)
-                var_rel = ppt_to_rel_flux(var)
+                std_rel = ppt_to_rel_flux(std)
         elif self.flux_units == "ppt":
             mu_rel = mu
-            var_rel = var
+            std_rel = std
         else:
             print(
                 "Warning: Not converting units as cannot handle anything other than relative flux units"
             )
             mu_rel = mu
-            var_rel = var
-
-        std_rel = np.sqrt(var_rel)
+            std_rel = std
 
         return mu_rel, std_rel
 
@@ -377,7 +376,7 @@ class GPPeriodFinder(PeriodFinder):
         )
         line.set_edgecolor("none")
 
-        ax.plot(model_timeseries, mu, color=colour, zorder=2)
+        ax.plot(model_timeseries, mu, color=colour, zorder=10)
 
     def plot_gp_residuals(
         self,
@@ -393,12 +392,12 @@ class GPPeriodFinder(PeriodFinder):
 
         if len(self.timeseries) > max_number_of_points:
             # downsample for plotting
-            n_times_over = len(self.timeseries) / max_number_of_points
-            plotting_timeseries = self.timeseries[:: ceil(n_times_over)]
-            plotting_flux = self.flux[:: ceil(n_times_over)]
+            n_times_over = len(self.timeseries[self.mask]) / max_number_of_points
+            plotting_timeseries = self.timeseries[self.mask][:: ceil(n_times_over)]
+            plotting_flux = self.flux[self.mask][:: ceil(n_times_over)]
         else:
-            plotting_timeseries = self.timeseries
-            plotting_flux = self.flux
+            plotting_timeseries = self.timeseries[self.mask]
+            plotting_flux = self.flux[self.mask]
 
         mu, std = self._generate_plotting_predictions(plotting_timeseries)
 
@@ -406,6 +405,8 @@ class GPPeriodFinder(PeriodFinder):
 
         ax.fill_between(plotting_timeseries, std, -std, color=colour, alpha=0.2)
         ax.scatter(plotting_timeseries, residuals, color="k", s=1)
+
+        ax.axhline(y=0, lw=1, alpha=0.2, c='gray')
         ax.set_xlabel(f"Time / {self.time_units}")
         ax.set_ylabel("Residuals")
 
