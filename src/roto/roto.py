@@ -277,6 +277,8 @@ class RoTo:
         if (not include) or (not self.periods):
             include = list(self.periods.keys())
 
+        plot_gp = plot_gp and ("gp" in self.periods)
+
         fig, ax_dict = self._setup_figure(
             include=include,
             exclude=exclude,
@@ -305,6 +307,7 @@ class RoTo:
                             ax_dict["residuals"],
                             colour=self.PLOTTING_COLOURS[method_name],
                         )
+                        ax_dict["residuals"].set_xlim(ax_dict["data"].get_xlim())
 
                 method.plot(
                     ax_dict[method_name]["method"],

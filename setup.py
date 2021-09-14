@@ -34,5 +34,6 @@ setuptools.setup(
         "pymc3_ext",
         "corner",
         "matplotlib",
+        "progressbar2",
     ],
 )
