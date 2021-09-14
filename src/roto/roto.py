@@ -450,7 +450,7 @@ class RoTo:
         """
 
         if "gp" in self.methods:
-            mask = self.methods['gp'].mask
+            mask = self.methods["gp"].mask
         else:
             mask = np.ones(len(self.timeseries), dtype=bool)
 
@@ -467,7 +467,7 @@ class RoTo:
             alpha=0.7,
             capsize=0,
             elinewidth=1,
-            mec='none'
+            mec="none",
         )
 
         ax.errorbar(
@@ -483,7 +483,7 @@ class RoTo:
             alpha=0.3,
             capsize=0,
             elinewidth=1,
-            mec='none'
+            mec="none",
         )
 
         ax.set_xlabel(f"Time / {self.time_units}")

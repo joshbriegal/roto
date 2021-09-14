@@ -8,9 +8,7 @@ from roto import RoTo
 logging.basicConfig(
     level=logging.ERROR,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.StreamHandler()
-    ]
+    handlers=[logging.StreamHandler()],
 )
 logging.getLogger("roto").setLevel(logging.DEBUG)
 logger = logging.getLogger(__name__)
