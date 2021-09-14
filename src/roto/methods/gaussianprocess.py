@@ -280,7 +280,6 @@ class GPPeriodFinder(PeriodFinder):
                 period.period_distribution,
                 histtype="step",
                 bins=21,
-                # bins=np.linspace(xmin - period.neg_error, xmax + period.pos_error),
                 color=colour,
             )
 
