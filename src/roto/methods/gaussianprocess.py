@@ -404,7 +404,7 @@ class GPPeriodFinder(PeriodFinder):
         ax.fill_between(plotting_timeseries, std, -std, color=colour, alpha=0.2)
         ax.scatter(plotting_timeseries, residuals, color="k", s=1)
 
-        ax.axhline(y=0, lw=1, alpha=0.2, c='gray')
+        ax.axhline(y=0, lw=1, alpha=0.2, c="gray")
         ax.set_xlabel(f"Time / {self.time_units}")
         ax.set_ylabel("Residuals")
 
