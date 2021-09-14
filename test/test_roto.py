@@ -53,15 +53,24 @@ def test_call(mock_gp, mock_gacf, mock_fft, mock_ls, timeseries, flux, flux_erro
     mock_fft_object = mock.Mock(return_value=PeriodResult(420))
     mock_ls_object = mock.Mock(return_value=PeriodResult(69))
     mock_gp_object = mock.Mock(return_value=PeriodResult(1))
+    mock_broken_function = mock.MagicMock(side_effect=RuntimeError("this is broken"))
 
     mock_gacf.return_value = mock_gacf_object
     mock_fft.return_value = mock_fft_object
     mock_ls.return_value = mock_ls_object
     mock_gp.return_value = mock_gp_object
+    mock_broken = mock.MagicMock()
+    mock_broken.return_value = mock_broken_function
 
     with mock.patch.dict(
         RoTo.METHODS,
-        {"lombscargle": mock_ls, "fft": mock_fft, "gacf": mock_gacf, "gp": mock_gp},
+        {
+            "lombscargle": mock_ls,
+            "fft": mock_fft,
+            "gacf": mock_gacf,
+            "gp": mock_gp,
+            "broken": mock_broken,
+        },
     ) as patched_dict:
 
         roto = RoTo(timeseries, flux, flux_errors)
@@ -75,10 +84,11 @@ def test_call(mock_gp, mock_gacf, mock_fft, mock_ls, timeseries, flux, flux_erro
         mock_fft_object.assert_called_once_with(**kwargs)
         mock_ls_object.assert_called_once_with(**kwargs)
         mock_gp_object.assert_called_once_with(**kwargs)
+        mock_broken_function.assert_called_once_with(**kwargs)
 
         # check no extra calls have been made.
         # note this may fail if we allow multiple periods per method.
-        assert len(roto.periods) == len(roto.METHODS)
+        assert len(roto.periods) == len(roto.METHODS) - 1
 
 
 @pytest.mark.parametrize(

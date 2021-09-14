@@ -1,7 +1,18 @@
+import logging
+
 import lightkurve as lk
 import numpy as np
 
 from roto import RoTo
+
+logging.basicConfig(
+    level=logging.ERROR,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler()],
+)
+logging.getLogger("roto").setLevel(logging.DEBUG)
+logger = logging.getLogger(__name__)
+
 
 if __name__ == "__main__":
 
@@ -37,7 +48,7 @@ if __name__ == "__main__":
     roto(
         gacf_method="peaks",
         do_mcmc=True,
-        remove_outliers=False,
+        remove_outliers=True,
         draws=2000,
         cores=4,
         chains=4,
@@ -45,4 +56,4 @@ if __name__ == "__main__":
     print(roto)
     roto.plot(plot_gp=True, savefig=True, show=False)
 
-    roto.plot_gp_diagnostics(show=False, savefig=True, fileext="png")
+    # roto.plot_gp_diagnostics(show=False, savefig=True, fileext="png")

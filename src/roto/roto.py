@@ -1,3 +1,4 @@
+import logging
 from itertools import cycle
 from typing import Dict, List, Optional, Tuple, Union
 
@@ -18,10 +19,13 @@ from roto.methods.periodfinder import PeriodResult
 from roto.plotting.plotting_tools import (
     calculate_phase,
     create_axis_with_formatter,
+    round_sig,
     split_phase,
 )
 
 DEFAULT_COLOUR_CYCLE = cycle(plt.rcParams["axes.prop_cycle"].by_key()["color"])
+
+logger = logging.getLogger(__name__)
 
 
 class RoTo:
@@ -62,13 +66,13 @@ class RoTo:
         self.regular_sampling = (timeseries_diffs.max() - timeseries_diffs.min()) < 1e-5
         self.time_units = time_units
         if self.time_units != "days":
-            print(
-                "Warning: GP prior scaled to expect timeseries data in days. Check prior or convert units."
+            logger.warning(
+                "GP prior scaled to expect timeseries data in days. Check prior or convert units."
             )
         self.flux_units = flux_units
         if self.flux_units != "relative flux units":
-            print(
-                "Warning: GP prior scaled to expect flux data in relative flux units. Check prior or convert units."
+            logger.warning(
+                "GP prior scaled to expect flux data in relative flux units. Check prior or convert units."
             )
 
         self.methods = self._parse_constructor_parameters(methods_parameters)
@@ -121,8 +125,12 @@ class RoTo:
                         ]
                     )
                     kwargs["gp_seed_period"] = average_period
-
-            self.periods[name] = method(**kwargs)
+            try:
+                self.periods[name] = method(**kwargs)
+            except Exception as e:
+                logger.error("Unable to run method %s" % name)
+                logger.error(e, exc_info=True)
+                continue
 
     def periods_to_table(self) -> pd.DataFrame:
         """Convert roto.periods into a DataFrame for display.
@@ -277,9 +285,13 @@ class RoTo:
             plot_gp=plot_gp,
         )
 
+        epoch = self.timeseries.min()
+
         self.plot_data(ax_dict["data"])
         self.plot_periods(ax_dict["distributions"])
-        self.plot_phase_folded_data(ax_dict["phase_fold"], self.best_period().period)
+        self.plot_phase_folded_data(
+            ax_dict["phase_fold"], self.best_period().period, epoch=epoch
+        )
 
         if not summary:
             for method_name, method in self.methods.items():
@@ -302,6 +314,7 @@ class RoTo:
                 self.plot_phase_folded_data(
                     ax_dict[method_name]["phase_fold"],
                     self.periods[method_name].period,
+                    epoch=epoch,
                 )
 
         if savefig:
@@ -385,8 +398,9 @@ class RoTo:
         ax.get_yaxis().set_visible(False)
         ax.set_xlabel("Period")
         two_sided_error = np.average([best_period.neg_error, best_period.pos_error])
+        error_rounded, error_precision = round_sig(two_sided_error, 2, return_dp=True)
         ax.set_title(
-            f"Adopted Period: {best_period.period:.2f} ± {two_sided_error:.2f} {self.time_units}"
+            f"Adopted Period: {round(best_period.period, error_precision)} ± {error_rounded} {self.time_units}"
         )
 
         ax.legend()
@@ -422,13 +436,15 @@ class RoTo:
                 show=show, savefig=savefig, filename=filename, fileext=fileext
             )
         except RuntimeError as trace_err:
-            print(trace_err)
+            logger.error("Unable to plot trace")
+            logger.error(trace_err, exc_info=True)
         try:
             self.methods["gp"].plot_distributions(
                 show=show, savefig=savefig, filename=filename, fileext=fileext
             )
         except (RuntimeError, ValueError) as dist_err:
-            print(dist_err)
+            logger.error("Unable to plot GP distributions")
+            logger.error(dist_err, exc_info=True)
 
     def plot_data(self, ax: Axes) -> Axes:
         """Scatter plot of input data.
@@ -439,20 +455,51 @@ class RoTo:
         Returns:
             Axes: Matplotlib axis
         """
+
+        if "gp" in self.methods:
+            mask = self.methods["gp"].mask
+        else:
+            mask = np.ones(len(self.timeseries), dtype=bool)
+
         ax.errorbar(
-            self.timeseries,
-            self.flux,
-            self.flux_errors,
-            markersize=1,
-            errorevery=2,
-            linestyle=" ",
-            marker=".",
+            self.timeseries[mask],
+            self.flux[mask],
+            self.flux_errors[mask],
+            markersize=2,
+            errorevery=1,
+            linestyle="none",
+            marker="o",
             color="k",
-            capsize=1,
+            ecolor="gray",
+            alpha=0.7,
+            capsize=0,
             elinewidth=1,
+            mec="none",
         )
+
+        ax.errorbar(
+            self.timeseries[~mask],
+            self.flux[~mask],
+            self.flux_errors[~mask],
+            markersize=2,
+            errorevery=1,
+            linestyle="none",
+            marker="o",
+            color="k",
+            ecolor="gray",
+            alpha=0.3,
+            capsize=0,
+            elinewidth=1,
+            mec="none",
+        )
+
         ax.set_xlabel(f"Time / {self.time_units}")
         ax.set_ylabel(f"Flux / {self.flux_units}")
+
+        ymin = np.min(self.flux - self.flux_errors)
+        ymax = np.max(self.flux + self.flux_errors)
+        yextent = ymax - ymin
+        ax.set_ylim([ymin - (yextent * 0.01), ymax + (yextent * 0.01)])
 
         return ax
 

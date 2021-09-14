@@ -29,7 +29,7 @@ if __name__ == "__main__":
         #     "gp": {"gp_seed_period": 3.853},
         # },
     )
-    roto(gacf_method="peaks", do_mcmc=False, remove_outliers=False)
+    roto(gacf_method="peaks", do_mcmc=False, remove_outliers=True)
     print(roto)
     roto.plot(plot_gp=True, savefig=True, show=False)
     # roto.plot_gp_diagnostics(show=False, savefig=True)
