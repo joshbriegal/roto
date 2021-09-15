@@ -277,13 +277,13 @@ class GACFPeriodFinder(PeriodFinder):
         if (self.lag_timeseries is None) or (self.correlations is None):
             self()
 
-        ax.scatter(self.lag_timeseries, self.correlations, s=1, color=colour)
+        ax.scatter(self.lag_timeseries, self.correlations, s=1, color="k")
 
-        ax.axvline(period.period, color="k", lw=1)
+        ax.axvline(period.period, color=colour, lw=1)
         ax.axvspan(
             period.period - period.neg_error,
             period.period + period.pos_error,
-            color="k",
+            color=colour,
             alpha=0.5,
         )
 

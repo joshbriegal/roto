@@ -130,9 +130,21 @@ class PeriodFinder(ABC):
             PeriodResult: PeriodResult contains period, error and method information.
         """
         self.periodogram = self.calculate_periodogram(**kwargs)
-        peak_indices = self.calculate_peak_indexes(self.periodogram.power_axis)
+        return self.get_period_from_periodogram(self.periodogram)
+
+    def get_period_from_periodogram(self, periodogram: Periodogram) -> PeriodResult:
+        """Get period from periodogram using peak finder util
+
+        Args:
+            periodogram (Periodogram): Periodogram object with frequency_axis, power_axis
+
+        Returns:
+            PeriodResult: Period of peak of periodogram, zero errors.
+        """
+
+        peak_indices = self.calculate_peak_indexes(periodogram.power_axis)
         if peak_indices.size > 0:
-            peak_frequencies = self.periodogram.frequency_axis[peak_indices]
+            peak_frequencies = periodogram.frequency_axis[peak_indices]
             period = (
                 1.0 / peak_frequencies[0]
             )  # just output largest peak in periodogram for now.
@@ -207,13 +219,13 @@ class PeriodFinder(ABC):
 
         period_axis = np.divide(1.0, self.periodogram.frequency_axis)
 
-        ax.semilogx(period_axis, self.periodogram.power_axis, lw=1, color=colour)
+        ax.semilogx(period_axis, self.periodogram.power_axis, lw=1, color="k")
 
-        ax.axvline(period.period, color="k", lw=1)
+        ax.axvline(period.period, color=colour, lw=1)
         ax.axvspan(
             period.period - period.neg_error,
             period.period + period.pos_error,
-            color="k",
+            color=colour,
             alpha=0.5,
         )
 

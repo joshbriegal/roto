@@ -280,7 +280,7 @@ class GPPeriodFinder(PeriodFinder):
                 period.period_distribution,
                 histtype="step",
                 bins=21,
-                color=colour,
+                color="k",
             )
 
         else:
@@ -302,7 +302,7 @@ class GPPeriodFinder(PeriodFinder):
             xerr=[[period.neg_error], [period.pos_error]],
             ms=10,
             marker="s",
-            c="k",
+            c=colour,
             capsize=10,
         )
 
@@ -375,11 +375,12 @@ class GPPeriodFinder(PeriodFinder):
 
         ax.plot(model_timeseries, mu, color=colour, zorder=10)
 
+        ax.set_xlim([model_timeseries.min(), model_timeseries.max()])
+
     def plot_gp_residuals(
         self,
         ax: Axes,
         colour: Optional[str] = "orange",
-        max_number_of_points: float = 2000,
     ) -> Axes:
         """Plot GP model predictions.
 
@@ -387,23 +388,45 @@ class GPPeriodFinder(PeriodFinder):
             ax (Axes):  Matplotlib axis
         """
 
-        if len(self.timeseries) > max_number_of_points:
-            # downsample for plotting
-            n_times_over = len(self.timeseries[self.mask]) / max_number_of_points
-            plotting_timeseries = self.timeseries[self.mask][:: ceil(n_times_over)]
-            plotting_flux = self.flux[self.mask][:: ceil(n_times_over)]
-        else:
-            plotting_timeseries = self.timeseries[self.mask]
-            plotting_flux = self.flux[self.mask]
+        mu, std = self._generate_plotting_predictions(self.timeseries)
 
-        mu, std = self._generate_plotting_predictions(plotting_timeseries)
+        residuals = self.flux - mu
 
-        residuals = plotting_flux - mu
+        ax.fill_between(self.timeseries, std, -std, color=colour, alpha=0.2)
 
-        ax.fill_between(plotting_timeseries, std, -std, color=colour, alpha=0.2)
-        ax.scatter(plotting_timeseries, residuals, color="k", s=1)
+        ax.errorbar(
+            self.timeseries[self.mask],
+            residuals[self.mask],
+            self.flux_errors[self.mask],
+            markersize=2,
+            errorevery=1,
+            linestyle="none",
+            marker="o",
+            color="k",
+            ecolor="gray",
+            alpha=0.7,
+            capsize=0,
+            elinewidth=1,
+            mec="none",
+        )
 
-        ax.axhline(y=0, lw=1, alpha=0.2, c="gray")
+        ax.errorbar(
+            self.timeseries[~self.mask],
+            residuals[~self.mask],
+            self.flux_errors[~self.mask],
+            markersize=2,
+            errorevery=1,
+            linestyle="none",
+            marker="o",
+            color="k",
+            ecolor="gray",
+            alpha=0.3,
+            capsize=0,
+            elinewidth=1,
+            mec="none",
+        )
+
+        ax.axhline(y=0, lw=1, alpha=0.2, c="r")
         ax.set_xlabel(f"Time / {self.time_units}")
         ax.set_ylabel("Residuals")
 
