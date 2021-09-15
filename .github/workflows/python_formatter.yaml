@@ -27,15 +27,13 @@ jobs:
 
       - name: Check for modified files
         id: git-check
-        run: echo ::set-output name=modified::$(if [ -z $(git status --porcelain) ]; then echo "true"; else echo "false"; fi)
-      
-      - name: Log into CI bot account
-        uses: oleksiyrudenko/gha-git-credentials@v2-latest
-        with:
-          token: '${{ secrets.CI_BOT_TOKEN }}'
+        run: echo ::set-output name=modified::$(if [ -z $(git status --porcelain) ]; then echo "true"; else echo "false"; fi)      
 
       - name: Push changes
         if: steps.git-check.outputs.modified == 'false'
+        uses: oleksiyrudenko/gha-git-credentials@v2-latest
+        with:
+          token: '${{ secrets.CI_BOT_TOKEN }}'
         env:
           GITHUB_TOKEN: ${{ secrets.CI_BOT_TOKEN }}
         run: |
