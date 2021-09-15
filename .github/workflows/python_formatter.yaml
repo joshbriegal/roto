@@ -31,9 +31,9 @@ jobs:
 
       - name: Push changes
         if: steps.git-check.outputs.modified == 'false'
+        env:
+          GITHUB_TOKEN: ${{ secrets.CI_BOT_TOKEN }}
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
           git add .
           git commit -am "fixup: Format Python code with Black and isort"
           git push
