@@ -426,7 +426,7 @@ class GPPeriodFinder(PeriodFinder):
             mec="none",
         )
 
-        ax.axhline(y=0, lw=1, alpha=0.2, c="gray")
+        ax.axhline(y=0, lw=1, alpha=0.2, c="r")
         ax.set_xlabel(f"Time / {self.time_units}")
         ax.set_ylabel("Residuals")
 
