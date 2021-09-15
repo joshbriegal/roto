@@ -2,9 +2,9 @@ import logging
 from typing import Optional
 
 import numpy as np
+import progressbar
 from astropy.timeseries import LombScargle
 from matplotlib.axes import Axes
-import progressbar
 
 from roto.methods.periodfinder import PeriodFinder, Periodogram, PeriodResult
 
@@ -96,7 +96,9 @@ class LombScarglePeriodFinder(PeriodFinder):
 
         methods = ["mean", "median"]
         if sliding_aggregation not in methods:
-            raise ValueError(f"method must be on of {methods}, not {sliding_aggregation}")
+            raise ValueError(
+                f"method must be on of {methods}, not {sliding_aggregation}"
+            )
 
         period_estimate = period_result_estimate.period
 
@@ -105,13 +107,21 @@ class LombScarglePeriodFinder(PeriodFinder):
         number_of_windows = int((self.timeseries.max() - (period_estimate * n_periods)) / period_estimate) + 1
 
         if number_of_windows < 3:
-            logger.warning("Sliding window too large to generate good estimate, returning regular lombscargle")
+            logger.warning(
+                "Sliding window too large to generate good estimate, returning regular lombscargle"
+            )
             return period_result_estimate
 
         count = 0
         with progressbar.ProgressBar(
-            max_value=number_of_windows,
-            widgets=['Sliding LombScargle Window: ', progressbar.Counter(), ' windows (', progressbar.Timer(), ')'],
+            maxval=number_of_windows,
+            widgets=[
+                "Sliding LombScargle Window: ",
+                progressbar.Counter(),
+                " windows (",
+                progressbar.Timer(),
+                ")",
+            ],
         ) as bar:
             while epoch <= self.timeseries.max() - (period_estimate * n_periods):
                 idxs = np.logical_and(
