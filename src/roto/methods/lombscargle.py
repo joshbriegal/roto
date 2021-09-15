@@ -102,7 +102,7 @@ class LombScarglePeriodFinder(PeriodFinder):
 
         periods = []
         epoch = self.timeseries.min()
-        number_of_windows = int(self.timeseries.max() - (period_estimate * n_periods) / period_estimate) + 1
+        number_of_windows = int((self.timeseries.max() - (period_estimate * n_periods)) / period_estimate) + 1
 
         if number_of_windows < 3:
             logger.warning("Sliding window too large to generate good estimate, returning regular lombscargle")
@@ -110,10 +110,10 @@ class LombScarglePeriodFinder(PeriodFinder):
 
         count = 0
         with progressbar.ProgressBar(
-            maxval=number_of_windows,
+            max_value=number_of_windows,
             widgets=['Sliding LombScargle Window: ', progressbar.Counter(), ' windows (', progressbar.Timer(), ')'],
         ) as bar:
-            while epoch < self.timeseries.max() - (period_estimate * n_periods):
+            while epoch <= self.timeseries.max() - (period_estimate * n_periods):
                 idxs = np.logical_and(
                     self.timeseries >= epoch,
                     self.timeseries < epoch + (period_estimate * n_periods),
