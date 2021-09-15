@@ -1,7 +1,7 @@
 from unittest import mock
-import pytest
 
 import numpy as np
+import pytest
 from astropy.timeseries import LombScargle
 from numpy.testing import assert_equal
 
@@ -12,6 +12,7 @@ from roto.methods.periodfinder import PeriodFinder, PeriodResult
 @pytest.fixture
 def period_result():
     return PeriodResult(1, 1, 1, "mock")
+
 
 def test_init(timeseries, flux, flux_errors):
 
@@ -82,16 +83,22 @@ def test_call_sliding(mock_call, mock_sliding, timeseries, flux, period_result):
     mock_call.return_value = period_result
 
     ls = LombScarglePeriodFinder(timeseries, flux, flux_errors=None, sliding=True)
-    
+
     ls(n_periods=100, sliding_aggregation="agg_method")
 
-    mock_call.assert_called_once_with(ls, n_periods=100, sliding_aggregation="agg_method")
-    mock_sliding.assert_called_once_with(ls, period_result, n_periods=100, sliding_aggregation="agg_method")
+    mock_call.assert_called_once_with(
+        ls, n_periods=100, sliding_aggregation="agg_method"
+    )
+    mock_sliding.assert_called_once_with(
+        ls, period_result, n_periods=100, sliding_aggregation="agg_method"
+    )
 
 
 @mock.patch("roto.methods.lombscargle.np.nanmean", autospec=True)
 @mock.patch("roto.methods.lombscargle.np.nanstd", autospec=True)
-def test_sliding_ls_periodogram_method_mean(mock_std, mock_mean, timeseries, flux, period_result):
+def test_sliding_ls_periodogram_method_mean(
+    mock_std, mock_mean, timeseries, flux, period_result
+):
     mock_mean.return_value = 420
     mock_std.return_value = 69
 
@@ -100,9 +107,15 @@ def test_sliding_ls_periodogram_method_mean(mock_std, mock_mean, timeseries, flu
     mock_ls = mock.MagicMock()
     mock_ls.return_value = period_result
 
-    with mock.patch("roto.methods.lombscargle.LombScarglePeriodFinder", autospec=True, return_value=mock_ls) as mock_ls_create:
+    with mock.patch(
+        "roto.methods.lombscargle.LombScarglePeriodFinder",
+        autospec=True,
+        return_value=mock_ls,
+    ) as mock_ls_create:
 
-        pr = ls._sliding_ls_periodogram(period_result, sliding_aggregation="mean", some="kwarg")
+        pr = ls._sliding_ls_periodogram(
+            period_result, sliding_aggregation="mean", some="kwarg"
+        )
 
         assert pr.period == 420
         assert pr.neg_error == pr.pos_error == 69
@@ -119,7 +132,11 @@ def test_sliding_ls_periodogram_method_mean(mock_std, mock_mean, timeseries, flu
         assert first_mock_call[1][2] is None
 
         assert first_mock_call[2] == {
-            "fit_mean":True, "center_data":True, "nterms":1, "normalization":'standard', "sliding":False
+            "fit_mean": True,
+            "center_data": True,
+            "nterms": 1,
+            "normalization": "standard",
+            "sliding": False,
         }
 
         assert mock_ls.call_count == 96
@@ -127,7 +144,9 @@ def test_sliding_ls_periodogram_method_mean(mock_std, mock_mean, timeseries, flu
 
 
 @mock.patch("roto.methods.lombscargle.np.percentile", autospec=True)
-def test_sliding_ls_periodogram_method_median(mock_perc, timeseries, flux, period_result):
+def test_sliding_ls_periodogram_method_median(
+    mock_perc, timeseries, flux, period_result
+):
     mock_perc.return_value = [385.5, 420, 454.5]
 
     ls = LombScarglePeriodFinder(timeseries, flux, flux_errors=None, sliding=True)
@@ -135,9 +154,15 @@ def test_sliding_ls_periodogram_method_median(mock_perc, timeseries, flux, perio
     mock_ls = mock.MagicMock()
     mock_ls.return_value = period_result
 
-    with mock.patch("roto.methods.lombscargle.LombScarglePeriodFinder", autospec=True, return_value=mock_ls) as mock_ls_create:
+    with mock.patch(
+        "roto.methods.lombscargle.LombScarglePeriodFinder",
+        autospec=True,
+        return_value=mock_ls,
+    ) as mock_ls_create:
 
-        pr = ls._sliding_ls_periodogram(period_result, sliding_aggregation="median", some="kwarg")
+        pr = ls._sliding_ls_periodogram(
+            period_result, sliding_aggregation="median", some="kwarg"
+        )
 
         assert pr.period == 420
         assert pr.neg_error == pr.pos_error == 69
@@ -153,18 +178,25 @@ def test_sliding_ls_periodogram_method_median(mock_perc, timeseries, flux, perio
         assert first_mock_call[1][2] is None
 
         assert first_mock_call[2] == {
-            "fit_mean":True, "center_data":True, "nterms":1, "normalization":'standard', "sliding":False
+            "fit_mean": True,
+            "center_data": True,
+            "nterms": 1,
+            "normalization": "standard",
+            "sliding": False,
         }
 
         assert mock_ls.call_count == 96
         mock_ls.assert_called_with(some="kwarg")
 
+
 @pytest.mark.parametrize(
     "period",
-    [100, 50, 40, 33.3333, 20, 34/5],
+    [100, 50, 40, 33.3333, 20, 34 / 5],
 )
 @mock.patch("roto.methods.lombscargle.np.percentile", autospec=True)
-def test_sliding_ls_periodogram_period_too_long(mock_perc, timeseries, flux, period_result):
+def test_sliding_ls_periodogram_period_too_long(
+    mock_perc, timeseries, flux, period_result
+):
     period_result.period = 50
 
     ls = LombScarglePeriodFinder(timeseries, flux, flux_errors=None, sliding=True)
@@ -172,7 +204,11 @@ def test_sliding_ls_periodogram_period_too_long(mock_perc, timeseries, flux, per
     mock_ls = mock.MagicMock()
     mock_ls.return_value = period_result
 
-    with mock.patch("roto.methods.lombscargle.LombScarglePeriodFinder", autospec=True, return_value=mock_ls) as mock_ls_create:
+    with mock.patch(
+        "roto.methods.lombscargle.LombScarglePeriodFinder",
+        autospec=True,
+        return_value=mock_ls,
+    ) as mock_ls_create:
 
         pr = ls._sliding_ls_periodogram(period_result)
 

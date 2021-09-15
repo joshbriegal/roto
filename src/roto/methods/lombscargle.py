@@ -104,7 +104,13 @@ class LombScarglePeriodFinder(PeriodFinder):
 
         periods = []
         epoch = self.timeseries.min()
-        number_of_windows = int((self.timeseries.max() - (period_estimate * n_periods)) / period_estimate) + 1
+        number_of_windows = (
+            int(
+                (self.timeseries.max() - (period_estimate * n_periods))
+                / period_estimate
+            )
+            + 1
+        )
 
         if number_of_windows < 3:
             logger.warning(
