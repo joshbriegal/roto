@@ -91,8 +91,24 @@ class LombScarglePeriodFinder(PeriodFinder):
         period_result_estimate: PeriodResult,
         n_periods: int = 5,
         sliding_aggregation: str = "median",
+        max_sliding_windows: int = 100,
         **autopower_kwargs,
-    ):
+    ) -> PeriodResult:
+        """Generate a set of PeriodResults using a sliding window over n_periods.
+
+        Args:
+            period_result_estimate (PeriodResult): First estimate period result
+            n_periods (int, optional): Number of complete periods to consider in each window. Defaults to 5.
+            sliding_aggregation (str, optional): How to aggregate the outputted periods. Defaults to "median". One of ["mean", "median"].
+            max_sliding_windows (int, optional): Max number of sliding windows to consider. Defaults to 100.
+                If period is too short, will cap the number of windows at this value.
+
+        Raises:
+            ValueError: If incorrect method given.
+
+        Returns:
+            PeriodResult: Single PeriodResult with errors calculated using spread across window calculations.
+        """
 
         methods = ["mean", "median"]
         if sliding_aggregation not in methods:
@@ -104,9 +120,15 @@ class LombScarglePeriodFinder(PeriodFinder):
 
         periods = []
         epoch = self.timeseries.min()
+        time_tolerance = np.diff(
+            self.timeseries
+        ).min()  # allow a small tolerance when calculating last window
         number_of_windows = (
             int(
-                (self.timeseries.max() - (period_estimate * n_periods))
+                (
+                    (self.timeseries.max() + time_tolerance)
+                    - (period_estimate * n_periods)
+                )
                 / period_estimate
             )
             + 1
@@ -118,9 +140,19 @@ class LombScarglePeriodFinder(PeriodFinder):
             )
             return period_result_estimate
 
+        if number_of_windows > max_sliding_windows:
+            logger.warning(
+                "Attempting to calculate too many sliding windows, reducing to %d"
+                % max_sliding_windows
+            )
+            number_of_windows = max_sliding_windows
+            n_periods = (self.timeseries.max() / period_estimate) - (
+                number_of_windows - 1
+            )
+
         count = 0
         with progressbar.ProgressBar(
-            maxval=number_of_windows,
+            max_value=number_of_windows,
             widgets=[
                 "Sliding LombScargle Window: ",
                 progressbar.Counter(),
@@ -129,7 +161,9 @@ class LombScarglePeriodFinder(PeriodFinder):
                 ")",
             ],
         ) as bar:
-            while epoch <= self.timeseries.max() - (period_estimate * n_periods):
+            while epoch <= (self.timeseries.max() + time_tolerance) - (
+                period_estimate * n_periods
+            ):
                 idxs = np.logical_and(
                     self.timeseries >= epoch,
                     self.timeseries < epoch + (period_estimate * n_periods),
