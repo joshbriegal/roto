@@ -170,6 +170,10 @@ class LombScarglePeriodFinder(PeriodFinder):
                 )
 
                 if len(self.timeseries[idxs]) == 0:
+                    logger.debug("Empty slice %d, continuing" % count)
+                    epoch += period_estimate
+                    count += 1
+                    bar.update(count)
                     continue
 
                 ls_periodfinder = LombScarglePeriodFinder(
@@ -179,6 +183,7 @@ class LombScarglePeriodFinder(PeriodFinder):
                     **self.ls_kwargs,
                     sliding=False,
                 )
+
                 period_result = ls_periodfinder(**autopower_kwargs)
 
                 if period_result is not None:
@@ -188,13 +193,21 @@ class LombScarglePeriodFinder(PeriodFinder):
                 count += 1
                 bar.update(count)
 
-        if sliding_aggregation == "median":
-            percentiles = np.percentile(periods, [10, 50, 90])
-            ave_period = percentiles[1]
-            std_period = percentiles[2] - percentiles[0]
-        elif sliding_aggregation == "mean":
-            ave_period = np.nanmean(periods)
-            std_period = np.nanstd(periods)
+        logger.info("Calculated %d periods from sliding windows" % len(periods))
+        logger.debug(periods)
+
+        try:
+            if sliding_aggregation == "median":
+                percentiles = np.percentile(periods, [10, 50, 90])
+                ave_period = percentiles[1]
+                std_period = percentiles[2] - percentiles[0]
+            elif sliding_aggregation == "mean":
+                ave_period = np.nanmean(periods)
+                std_period = np.nanstd(periods)
+        except (IndexError, ValueError) as err:
+            logger.error("Unable to calculate %s, returning initial guess" % sliding_aggregation)
+            logger.error(err, exc_info=True)
+            return period_result_estimate
 
         return PeriodResult(
             ave_period, std_period, std_period, method=self.__class__.__name__
