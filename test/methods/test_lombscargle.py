@@ -223,9 +223,7 @@ def test_sliding_ls_periodogram_period_too_long(
     "period",
     [0.2, 0.5, 0.8984654, 0.95],
 )
-def test_sliding_ls_periodogram_too_short(
-    period, timeseries, flux, period_result
-):
+def test_sliding_ls_periodogram_too_short(period, timeseries, flux, period_result):
     ls = LombScarglePeriodFinder(timeseries, flux, flux_errors=None, sliding=True)
 
     mock_ls = mock.MagicMock()
@@ -247,9 +245,7 @@ def test_sliding_ls_periodogram_too_short(
         assert mock_ls.call_count == 100
 
 
-def test_sliding_ls_periodogram_too_short_user_param(
-    timeseries, flux, period_result
-):
+def test_sliding_ls_periodogram_too_short_user_param(timeseries, flux, period_result):
     ls = LombScarglePeriodFinder(timeseries, flux, flux_errors=None, sliding=True)
 
     mock_ls = mock.MagicMock()

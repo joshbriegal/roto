@@ -120,10 +120,15 @@ class LombScarglePeriodFinder(PeriodFinder):
 
         periods = []
         epoch = self.timeseries.min()
-        time_tolerance = np.diff(self.timeseries).min()  # allow a small tolerance when calculating last window
+        time_tolerance = np.diff(
+            self.timeseries
+        ).min()  # allow a small tolerance when calculating last window
         number_of_windows = (
             int(
-                ((self.timeseries.max() + time_tolerance) - (period_estimate * n_periods))
+                (
+                    (self.timeseries.max() + time_tolerance)
+                    - (period_estimate * n_periods)
+                )
                 / period_estimate
             )
             + 1
@@ -134,13 +139,16 @@ class LombScarglePeriodFinder(PeriodFinder):
                 "Sliding window too large to generate good estimate, returning regular lombscargle"
             )
             return period_result_estimate
-        
+
         if number_of_windows > max_sliding_windows:
             logger.warning(
-                "Attempting to calculate too many sliding windows, reducing to %d" % max_sliding_windows
+                "Attempting to calculate too many sliding windows, reducing to %d"
+                % max_sliding_windows
             )
             number_of_windows = max_sliding_windows
-            n_periods = (self.timeseries.max() / period_estimate) - (number_of_windows - 1)
+            n_periods = (self.timeseries.max() / period_estimate) - (
+                number_of_windows - 1
+            )
 
         count = 0
         with progressbar.ProgressBar(
@@ -153,7 +161,9 @@ class LombScarglePeriodFinder(PeriodFinder):
                 ")",
             ],
         ) as bar:
-            while epoch <= (self.timeseries.max() + time_tolerance) - (period_estimate * n_periods):
+            while epoch <= (self.timeseries.max() + time_tolerance) - (
+                period_estimate * n_periods
+            ):
                 idxs = np.logical_and(
                     self.timeseries >= epoch,
                     self.timeseries < epoch + (period_estimate * n_periods),
