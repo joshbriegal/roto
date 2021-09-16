@@ -205,7 +205,9 @@ class LombScarglePeriodFinder(PeriodFinder):
                 ave_period = np.nanmean(periods)
                 std_period = np.nanstd(periods)
         except (IndexError, ValueError) as err:
-            logger.error("Unable to calculate %s, returning initial guess" % sliding_aggregation)
+            logger.error(
+                "Unable to calculate %s, returning initial guess" % sliding_aggregation
+            )
             logger.error(err, exc_info=True)
             return period_result_estimate
 

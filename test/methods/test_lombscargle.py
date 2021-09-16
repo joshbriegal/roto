@@ -266,6 +266,7 @@ def test_sliding_ls_periodogram_too_short_user_param(timeseries, flux, period_re
         assert mock_ls_create.call_count == 20
         assert mock_ls.call_count == 20
 
+
 @mock.patch("roto.methods.lombscargle.np.logical_and", autospec=True)
 def test_sliding_ls_periodogram_no_periods(mock_and, timeseries, flux, period_result):
     mock_and.return_value = np.zeros(len(timeseries)).astype(bool)
