@@ -217,3 +217,31 @@ def test_sliding_ls_periodogram_period_too_long(
         mock_perc.assert_not_called()
         mock_ls.assert_not_called()
         mock_ls_create.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "period",
+    [0.2, 0.5, 0.8984654, 0.95],
+)
+def test_sliding_ls_periodogram_too_short(
+    period, timeseries, flux, period_result
+):
+    ls = LombScarglePeriodFinder(timeseries, flux, flux_errors=None, sliding=True)
+
+    mock_ls = mock.MagicMock()
+    mock_ls.return_value = period_result
+
+    period_result.period = period
+
+    with mock.patch(
+        "roto.methods.lombscargle.LombScarglePeriodFinder",
+        autospec=True,
+        return_value=mock_ls,
+    ) as mock_ls_create:
+
+        pr = ls._sliding_ls_periodogram(
+            period_result, sliding_aggregation="median", some="kwarg"
+        )
+
+        assert mock_ls_create.call_count == 100
+        assert mock_ls.call_count == 100
