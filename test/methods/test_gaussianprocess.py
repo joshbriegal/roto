@@ -1,4 +1,5 @@
 from unittest import mock
+import time
 
 import numpy as np
 from numpy.testing import assert_equal
@@ -146,3 +147,33 @@ def test_calculate_gp_period_mcmc(
     period_result == PeriodResult(1, 1, 1, "GPPeriodFinder")
 
     assert pf.trace == mock_trace
+
+@mock.patch.object(GPPeriodFinder, "build_model")
+@mock.patch("roto.methods.gaussianprocess.pmx.sample")
+@mock.patch("roto.methods.gaussianprocess.np.percentile", return_value=[0, 1, 2])
+def test_calculate_gp_period_mcmc_timeout(
+    mock_percentile, mock_sample, mock_build_model, timeseries, flux, flux_errors
+):
+
+    mock_model = mock.MagicMock()
+
+    mock_map_soln = mock.MagicMock()
+    solution_dict = {"period": 69.420}
+    mock_map_soln.__getitem__.side_effect = solution_dict.__getitem__
+
+    mock_sample.side_effect = lambda *args, **kw: time.sleep(10)
+
+    mock_build_model.return_value = mock_model, mock_map_soln
+
+    pf = GPPeriodFinder(timeseries, flux, flux_errors)
+
+    period_result = pf.calcuate_gp_period(do_mcmc=True, timeout=1)
+
+    mock_build_model.assert_called_once_with()
+
+    mock_percentile.assert_not_called()
+
+    assert pf.trace == None
+    assert period_result.period == 69.420
+    assert period_result.pos_error == period_result.neg_error == 0.0
+    assert period_result.method == "GPPeriodFinder"

@@ -1,5 +1,6 @@
 import logging
-from math import ceil
+import os
+import signal
 from os.path import splitext
 from typing import Optional, Tuple
 
@@ -12,12 +13,16 @@ import pymc3_ext as pmx
 from celerite2.theano import GaussianProcess, terms
 from corner import corner
 from matplotlib.axes import Axes
-
 from roto.methods.periodfinder import PeriodFinder, PeriodResult
 from roto.plotting.plotting_tools import ppt_to_rel_flux, rel_flux_to_ppt
 
 logger = logging.getLogger(__name__)
 
+class TimeoutError(Exception):
+    pass
+    
+def timeout_handler(signum, frame):
+    raise TimeoutError("Time limit reached")
 
 class GPPeriodFinder(PeriodFinder):
     """Gaussian Process (GP) regression method to find periods.
@@ -134,6 +139,7 @@ class GPPeriodFinder(PeriodFinder):
         cores = kwargs.get("cores", 1)
         chains = kwargs.get("chains", 2)
         target_accept = kwargs.get("target_accept", 0.9)
+        timeout = kwargs.get("timeout", None)
 
         # compute initial MAP solution
         model, map_soln = self.build_model()
@@ -150,35 +156,47 @@ class GPPeriodFinder(PeriodFinder):
 
         # (optionally) run MCMC to sample from posterior
         if do_mcmc and model:
-            with model:
-                trace = pmx.sample(
-                    tune=tune,
-                    draws=draws,
-                    start=map_soln,
-                    cores=cores,
-                    chains=chains,
-                    target_accept=target_accept,
-                    return_inferencedata=True,  # returns an arviz.InferenceData object
-                    discard_tuned_samples=True,
+            try:
+                if timeout is not None and (os.name == 'posix'):
+                    # signal timeout only works on UNIX systems
+                    signal.signal(signal.SIGALRM, timeout_handler)
+                    signal.alarm(timeout)
+
+                with model:
+                    trace = pmx.sample(
+                        tune=tune,
+                        draws=draws,
+                        start=map_soln,
+                        cores=cores,
+                        chains=chains,
+                        target_accept=target_accept,
+                        return_inferencedata=True,  # returns an arviz.InferenceData object
+                        discard_tuned_samples=True,
+                    )
+                
+                if timeout is not None and (os.name == 'posix'):
+                    signal.alarm(0)
+
+                # estimate period and uncertainty
+                period_samples = np.asarray(trace.posterior["period"]).flatten()
+                percentiles = np.percentile(period_samples, [15.87, 50.0, 84.14])
+                med_p = float("{:.5f}".format(percentiles[1]))
+                sigma_n = float("{:.5f}".format(percentiles[1] - percentiles[0]))
+                sigma_p = float("{:.5f}".format(percentiles[2] - percentiles[1]))
+
+                self.trace = trace
+                self.model = model
+
+                return PeriodResult(
+                    period=med_p,
+                    neg_error=sigma_n,
+                    pos_error=sigma_p,
+                    method=self.__class__.__name__,
+                    period_distribution=period_samples,
                 )
-
-            # estimate period and uncertainty
-            period_samples = np.asarray(trace.posterior["period"]).flatten()
-            percentiles = np.percentile(period_samples, [15.87, 50.0, 84.14])
-            med_p = float("{:.5f}".format(percentiles[1]))
-            sigma_n = float("{:.5f}".format(percentiles[1] - percentiles[0]))
-            sigma_p = float("{:.5f}".format(percentiles[2] - percentiles[1]))
-
-            self.trace = trace
-            self.model = model
-
-            return PeriodResult(
-                period=med_p,
-                neg_error=sigma_n,
-                pos_error=sigma_p,
-                method=self.__class__.__name__,
-                period_distribution=period_samples,
-            )
+            except TimeoutError as err:
+                logger.error("MCMC sampling timed out, returning MAP solution")
+                logger.error(err, exc_info=bool)
 
         return PeriodResult(
             period=float("{:.5f}".format(map_soln["period"])),
