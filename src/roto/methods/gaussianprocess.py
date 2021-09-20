@@ -13,16 +13,20 @@ import pymc3_ext as pmx
 from celerite2.theano import GaussianProcess, terms
 from corner import corner
 from matplotlib.axes import Axes
+
 from roto.methods.periodfinder import PeriodFinder, PeriodResult
 from roto.plotting.plotting_tools import ppt_to_rel_flux, rel_flux_to_ppt
 
 logger = logging.getLogger(__name__)
 
+
 class TimeoutError(Exception):
     pass
-    
+
+
 def timeout_handler(signum, frame):
     raise TimeoutError("Time limit reached")
+
 
 class GPPeriodFinder(PeriodFinder):
     """Gaussian Process (GP) regression method to find periods.
@@ -157,7 +161,7 @@ class GPPeriodFinder(PeriodFinder):
         # (optionally) run MCMC to sample from posterior
         if do_mcmc and model:
             try:
-                if timeout is not None and (os.name == 'posix'):
+                if timeout is not None and (os.name == "posix"):
                     # signal timeout only works on UNIX systems
                     signal.signal(signal.SIGALRM, timeout_handler)
                     signal.alarm(timeout)
@@ -173,8 +177,8 @@ class GPPeriodFinder(PeriodFinder):
                         return_inferencedata=True,  # returns an arviz.InferenceData object
                         discard_tuned_samples=True,
                     )
-                
-                if timeout is not None and (os.name == 'posix'):
+
+                if timeout is not None and (os.name == "posix"):
                     signal.alarm(0)
 
                 # estimate period and uncertainty

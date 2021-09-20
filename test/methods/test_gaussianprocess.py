@@ -1,5 +1,5 @@
-from unittest import mock
 import time
+from unittest import mock
 
 import numpy as np
 from numpy.testing import assert_equal
@@ -147,6 +147,7 @@ def test_calculate_gp_period_mcmc(
     period_result == PeriodResult(1, 1, 1, "GPPeriodFinder")
 
     assert pf.trace == mock_trace
+
 
 @mock.patch.object(GPPeriodFinder, "build_model")
 @mock.patch("roto.methods.gaussianprocess.pmx.sample")
