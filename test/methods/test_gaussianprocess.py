@@ -2,8 +2,8 @@ import time
 from unittest import mock
 
 import numpy as np
-from numpy.testing import assert_equal
 import pytest
+from numpy.testing import assert_equal
 
 from roto.methods.gaussianprocess import GPPeriodFinder
 from roto.methods.periodfinder import PeriodResult
@@ -58,7 +58,9 @@ def test_calculate_gp_period_no_mcmc(
     timeseries, flux, flux_errors, period, mock_model, mock_map_soln, mock_build_model
 ):
 
-    with mock.patch.object(GPPeriodFinder, "build_model", new=mock_build_model) as build_model:
+    with mock.patch.object(
+        GPPeriodFinder, "build_model", new=mock_build_model
+    ) as build_model:
 
         solution_dict = {"period": period, "pred": 0.0}
         mock_map_soln.__getitem__.side_effect = solution_dict.__getitem__
@@ -71,7 +73,7 @@ def test_calculate_gp_period_no_mcmc(
 
         # TODO: Improve this test - assess called twice by altering fixture.
         # mock_build_model.assert_called_once_with()
-        assert pf.model ==  mock_model
+        assert pf.model == mock_model
         assert pf.solution == mock_map_soln
 
         assert period_result == PeriodResult(period, 0, 0, "GPPeriodFinder")
@@ -81,7 +83,9 @@ def test_calculate_gp_period_no_mcmc_remove_outliers(
     timeseries, flux, flux_errors, period, mock_model, mock_map_soln, mock_build_model
 ):
 
-    with mock.patch.object(GPPeriodFinder, "build_model", new=mock_build_model) as build_model:
+    with mock.patch.object(
+        GPPeriodFinder, "build_model", new=mock_build_model
+    ) as build_model:
 
         solution_dict = {"period": period, "pred": 0.0}
         mock_map_soln.__getitem__.side_effect = solution_dict.__getitem__
@@ -99,7 +103,7 @@ def test_calculate_gp_period_no_mcmc_remove_outliers(
 
         # assert build_model.call_args_list[1][1]["start"] == mock_map_soln
         assert_equal(pf.mask, np.ones(10))
-        assert pf.model ==  mock_model
+        assert pf.model == mock_model
         assert pf.solution == mock_map_soln
 
         assert period_result == PeriodResult(period, 0, 0, "GPPeriodFinder")
@@ -153,13 +157,24 @@ def test_calculate_gp_period_mcmc(
 
     assert pf.trace == mock_trace
 
+
 @mock.patch("roto.methods.gaussianprocess.pmx.sample")
 @mock.patch("roto.methods.gaussianprocess.np.percentile", return_value=[0, 1, 2])
 def test_calculate_gp_period_mcmc_timeout(
-    mock_percentile, mock_sample, timeseries, flux, flux_errors, period, mock_model, mock_map_soln, mock_build_model
+    mock_percentile,
+    mock_sample,
+    timeseries,
+    flux,
+    flux_errors,
+    period,
+    mock_model,
+    mock_map_soln,
+    mock_build_model,
 ):
 
-    with mock.patch.object(GPPeriodFinder, "build_model", new=mock_build_model) as build_model:
+    with mock.patch.object(
+        GPPeriodFinder, "build_model", new=mock_build_model
+    ) as build_model:
 
         mock_sample.side_effect = lambda *args, **kw: time.sleep(10)
 
@@ -179,10 +194,15 @@ def test_calculate_gp_period_mcmc_timeout(
 
 @mock.patch("roto.methods.gaussianprocess.np.percentile", return_value=[0, 1, 2])
 def test_calculate_gp_period_mcmc_timeout_on_build(
-    mock_percentile, timeseries, flux, flux_errors,
+    mock_percentile,
+    timeseries,
+    flux,
+    flux_errors,
 ):
 
-    with mock.patch.object(GPPeriodFinder, "build_model", new=lambda x: time.sleep(10)) as build_model:
+    with mock.patch.object(
+        GPPeriodFinder, "build_model", new=lambda x: time.sleep(10)
+    ) as build_model:
 
         with pytest.raises(TimeoutError):
 
@@ -195,4 +215,3 @@ def test_calculate_gp_period_mcmc_timeout_on_build(
             assert pf.trace is None
             assert pf.model is None
             assert pf.solution is None
-

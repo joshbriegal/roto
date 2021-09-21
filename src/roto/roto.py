@@ -302,7 +302,8 @@ class RoTo:
                         if plot_gp:
                             ax_dict["data"].get_xaxis().set_visible(False)
                             method.plot_gp_predictions(
-                                ax_dict["data"], colour=self.PLOTTING_COLOURS[method_name]
+                                ax_dict["data"],
+                                colour=self.PLOTTING_COLOURS[method_name],
                             )
                             method.plot_gp_residuals(
                                 ax_dict["residuals"],
