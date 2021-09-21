@@ -297,28 +297,33 @@ class RoTo:
 
         if not summary:
             for method_name, method in self.methods.items():
-                if method_name == "gp":
-                    if plot_gp:
-                        ax_dict["data"].get_xaxis().set_visible(False)
-                        method.plot_gp_predictions(
-                            ax_dict["data"], colour=self.PLOTTING_COLOURS[method_name]
-                        )
-                        method.plot_gp_residuals(
-                            ax_dict["residuals"],
-                            colour=self.PLOTTING_COLOURS[method_name],
-                        )
-                        ax_dict["residuals"].set_xlim(ax_dict["data"].get_xlim())
+                try:
+                    if method_name == "gp":
+                        if plot_gp:
+                            ax_dict["data"].get_xaxis().set_visible(False)
+                            method.plot_gp_predictions(
+                                ax_dict["data"],
+                                colour=self.PLOTTING_COLOURS[method_name],
+                            )
+                            method.plot_gp_residuals(
+                                ax_dict["residuals"],
+                                colour=self.PLOTTING_COLOURS[method_name],
+                            )
+                            ax_dict["residuals"].set_xlim(ax_dict["data"].get_xlim())
 
-                method.plot(
-                    ax_dict[method_name]["method"],
-                    self.periods[method_name],
-                    colour=self.PLOTTING_COLOURS[method_name],
-                )
-                self.plot_phase_folded_data(
-                    ax_dict[method_name]["phase_fold"],
-                    self.periods[method_name].period,
-                    epoch=epoch,
-                )
+                    method.plot(
+                        ax_dict[method_name]["method"],
+                        self.periods[method_name],
+                        colour=self.PLOTTING_COLOURS[method_name],
+                    )
+                    self.plot_phase_folded_data(
+                        ax_dict[method_name]["phase_fold"],
+                        self.periods[method_name].period,
+                        epoch=epoch,
+                    )
+                except KeyError as err:
+                    logger.warning(f"Not plotting method {method} as no results found")
+                    continue
 
         if savefig:
             fig.savefig(filename, bbox_inches="tight", pad_inches=0.25)
