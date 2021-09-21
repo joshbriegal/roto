@@ -20,10 +20,6 @@ from roto.plotting.plotting_tools import ppt_to_rel_flux, rel_flux_to_ppt
 logger = logging.getLogger(__name__)
 
 
-class TimeoutError(Exception):
-    pass
-
-
 def timeout_handler(signum, frame):
     raise TimeoutError("Time limit reached")
 
@@ -146,26 +142,26 @@ class GPPeriodFinder(PeriodFinder):
         timeout = kwargs.get("timeout", None)
 
         # compute initial MAP solution
-        model, map_soln = self.build_model()
+        try:
+            if timeout is not None and (os.name == "posix"):
+                # signal timeout only works on UNIX systems
+                signal.signal(signal.SIGALRM, timeout_handler)
+                signal.alarm(timeout)
 
-        # (optionally) recompute MAP solution with outliers masked
-        if remove_outliers:
-            residuals = self.flux_ppt - map_soln["pred"]
-            rms = np.sqrt(np.nanmedian(residuals ** 2))
-            self.mask = np.abs(residuals) < rms_sigma * rms
-            model, map_soln = self.build_model(start=map_soln)
+            model, map_soln = self.build_model()
 
-        logger.info("MAP Solution found")
-        logger.debug(map_soln)
+            # (optionally) recompute MAP solution with outliers masked
+            if remove_outliers:
+                residuals = self.flux_ppt - map_soln["pred"]
+                rms = np.sqrt(np.nanmedian(residuals ** 2))
+                self.mask = np.abs(residuals) < rms_sigma * rms
+                model, map_soln = self.build_model(start=map_soln)
 
-        # (optionally) run MCMC to sample from posterior
-        if do_mcmc and model:
-            try:
-                if timeout is not None and (os.name == "posix"):
-                    # signal timeout only works on UNIX systems
-                    signal.signal(signal.SIGALRM, timeout_handler)
-                    signal.alarm(timeout)
+            logger.info("MAP Solution found")
+            logger.debug(map_soln)
 
+            # (optionally) run MCMC to sample from posterior
+            if do_mcmc and model:
                 with model:
                     trace = pmx.sample(
                         tune=tune,
@@ -177,9 +173,6 @@ class GPPeriodFinder(PeriodFinder):
                         return_inferencedata=True,  # returns an arviz.InferenceData object
                         discard_tuned_samples=True,
                     )
-
-                if timeout is not None and (os.name == "posix"):
-                    signal.alarm(0)
 
                 # estimate period and uncertainty
                 period_samples = np.asarray(trace.posterior["period"]).flatten()
@@ -198,16 +191,28 @@ class GPPeriodFinder(PeriodFinder):
                     method=self.__class__.__name__,
                     period_distribution=period_samples,
                 )
-            except TimeoutError as err:
-                logger.error("MCMC sampling timed out, returning MAP solution")
-                logger.error(err, exc_info=bool)
 
-        return PeriodResult(
-            period=float("{:.5f}".format(map_soln["period"])),
-            neg_error=0.0,
-            pos_error=0.0,
-            method=self.__class__.__name__,
-        )
+            if timeout is not None and (os.name == "posix"):
+                signal.alarm(0)
+
+            return PeriodResult(
+                period=float("{:.5f}".format(self.solution["period"])),
+                neg_error=0.0,
+                pos_error=0.0,
+                method=self.__class__.__name__,
+            )
+
+        except TimeoutError as err:
+            logger.error("GP Period Finder timed out")
+            logger.error(err, exc_info=bool)
+            if self.solution is not None:
+                return PeriodResult(
+                    period=float("{:.5f}".format(self.solution["period"])),
+                    neg_error=0.0,
+                    pos_error=0.0,
+                    method=self.__class__.__name__,
+                )
+            raise err
 
     def build_model(
         self, start: Optional[pm.Point] = None
