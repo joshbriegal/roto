@@ -128,6 +128,7 @@ class LombScarglePeriodFinder(PeriodFinder):
                 (
                     (self.timeseries.max() + time_tolerance)
                     - (period_estimate * n_periods)
+                    - epoch
                 )
                 / period_estimate
             )
@@ -146,7 +147,7 @@ class LombScarglePeriodFinder(PeriodFinder):
                 % max_sliding_windows
             )
             number_of_windows = max_sliding_windows
-            n_periods = (self.timeseries.max() / period_estimate) - (
+            n_periods = ((self.timeseries.max() - epoch) / period_estimate) - (
                 number_of_windows - 1
             )
 

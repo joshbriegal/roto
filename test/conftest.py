@@ -5,7 +5,7 @@ from unittest import mock
 
 @pytest.fixture
 def timeseries():
-    return np.linspace(0, 100, 1000)
+    return np.linspace(10, 110, 1000)
 
 
 @pytest.fixture
