@@ -69,6 +69,8 @@ class LombScarglePeriodFinder(PeriodFinder):
                 "center_data": center_data,
                 "nterms": nterms,
                 "normalization": normalization,
+                "min_ratio_of_maximum_peak_size":min_ratio_of_maximum_peak_size,
+                "samples_per_peak":samples_per_peak,
             }
 
     def __call__(self, **kwargs) -> PeriodResult:
