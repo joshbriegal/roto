@@ -343,7 +343,12 @@ class GPPeriodFinder(PeriodFinder):
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
 
         mu, var = pmx.eval_in_model(
-            self.gp.predict(self.flux_ppt[self.mask], t=timeseries, return_var=True, include_mean=True),
+            self.gp.predict(
+                self.flux_ppt[self.mask],
+                t=timeseries,
+                return_var=True,
+                include_mean=True,
+            ),
             point=self.solution,
             model=self.model,
         )
