@@ -5,6 +5,7 @@ import numpy as np
 import progressbar
 from astropy.timeseries import LombScargle
 from matplotlib.axes import Axes
+from scipy.stats import median_abs_deviation
 
 from roto.methods.periodfinder import PeriodFinder, Periodogram, PeriodResult
 
@@ -199,9 +200,9 @@ class LombScarglePeriodFinder(PeriodFinder):
 
         try:
             if sliding_aggregation == "median":
-                percentiles = np.percentile(periods, [10, 50, 90])
-                ave_period = percentiles[1]
-                std_period = percentiles[2] - percentiles[0]
+                ave_period = np.nanmedian(periods)
+                std_period = 1.4826*median_abs_deviation(periods, nan_policy='omit')
+                
             elif sliding_aggregation == "mean":
                 ave_period = np.nanmean(periods)
                 std_period = np.nanstd(periods)
